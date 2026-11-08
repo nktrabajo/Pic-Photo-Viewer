@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+# Al desinstalar, el tema de GNOME vuelve a ser el de fábrica. En una
+# actualización ("upgrade") no se toca: el postinst nuevo lo reaplica.
+if [ "$1" = "remove" ] && [ -x /usr/libexec/picphotoviewer/picphotoviewer-gdm ]; then
+  /usr/libexec/picphotoviewer/picphotoviewer-gdm restaurar >/dev/null || \
+    echo "PicPhotoViewer: no se pudo restaurar el tema de GDM original" >&2
+fi
+exit 0

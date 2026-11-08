@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>PicPhotoViewer</vendor>
+  <vendor_url>https://github.com/nktrabajo/Pic-Photo-Viewer</vendor_url>
+  <icon_name>picphotoviewer</icon_name>
+
+  <action id="com.itcorp.picphotoviewer.gdm">
+    <description>Change the login screen background</description>
+    <description xml:lang="es">Cambiar el fondo de la pantalla de inicio de sesión</description>
+    <message>Authentication is required to change the login screen background</message>
+    <message xml:lang="es">Se necesita la contraseña de administrador para cambiar el fondo de la pantalla de inicio de sesión</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/picphotoviewer/picphotoviewer-gdm</annotate>
+  </action>
+
+  <action id="com.itcorp.picphotoviewer.actualizar">
+    <description>Install a PicPhotoViewer update</description>
+    <description xml:lang="es">Instalar una actualización de PicPhotoViewer</description>
+    <message>Authentication is required to install the PicPhotoViewer update</message>
+    <message xml:lang="es">Se necesita la contraseña de administrador para instalar la actualización de PicPhotoViewer</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/picphotoviewer/picphotoviewer-instalar</annotate>
+  </action>
+</policyconfig>

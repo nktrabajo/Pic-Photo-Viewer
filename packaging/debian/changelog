@@ -1,0 +1,9 @@
+picphotoviewer (0.1.0) unstable; urgency=medium
+
+  * Primera versión: visor estilo Picasa sobre el escritorio, tira de fotos,
+    zoom, presentación, rotación sin pérdida, estrellas en .picasa.ini,
+    imprimir, copiar, papelera, fondo de escritorio por pantalla (con
+    diagrama de monitores), fondo de GDM, menú contextual de Nautilus y aviso
+    de versiones nuevas desde GitHub Releases.
+
+ -- Neils Karlson <nktrabajo@gmail.com>  Sun, 08 Nov 2026 16:45:00 -0600

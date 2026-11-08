@@ -1,0 +1,182 @@
+#!/usr/bin/python3 -I
+# ---------------------------------------------------------------------------
+# picphotoviewer-gdm — pone una imagen de fondo en la pantalla de inicio de
+#                      sesión (GDM). Corre como ROOT, vía pkexec.
+#
+#   picphotoviewer-gdm aplicar <imagen.jpg>   copia la imagen y parchea el tema
+#   picphotoviewer-gdm reaplicar              vuelve a parchear (trigger de dpkg)
+#   picphotoviewer-gdm restaurar              deja el tema original de GNOME
+#   picphotoviewer-gdm estado                 imprime "aplicado" o "original"
+#
+# Cómo (relevado en Debian 13 / GNOME 48.7, 2026-11-08): GDM pinta el fondo
+# con la regla CSS `#lockDialogGroup` del tema de gnome-shell, que vive dentro
+# de /usr/share/gnome-shell/gnome-shell-theme.gresource. Debian NO ofrece una
+# `alternative` para ese archivo, así que se reescribe: se extraen todos los
+# recursos, se agrega al final de las tres hojas CSS un bloque marcado
+# (PicPhotoViewer:inicio/fin) y se vuelve a compilar.
+#
+# Seguridad:
+#   - El original se guarda UNA vez en /var/lib/picphotoviewer/ antes del
+#     primer parche, y `restaurar` lo devuelve (también lo llama el postrm).
+#   - Cuando gnome-shell se actualiza, dpkg pisa el gresource con el nuevo y
+#     dispara el trigger del paquete → `reaplicar` parchea la versión NUEVA
+#     (nunca se reinstala un tema viejo sobre un gnome-shell nuevo).
+#   - El archivo nuevo se compila al lado y se cambia con rename(): si algo
+#     falla a la mitad, el tema original queda intacto.
+#   - Solo se acepta un JPEG regular de hasta 40 MB (lo convierte la app antes).
+#
+# PPV_RAIZ (solo para las pruebas, sin root): prefijo de todas las rutas.
+# pkexec limpia el entorno, así que en uso real nunca llega.
+# ---------------------------------------------------------------------------
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+
+RAIZ = os.environ.get("PPV_RAIZ", "")
+GRESOURCE = RAIZ + "/usr/share/gnome-shell/gnome-shell-theme.gresource"
+VAR = RAIZ + "/var/lib/picphotoviewer"
+FONDO = VAR + "/gdm-fondo.jpg"
+ORIGINAL = VAR + "/gnome-shell-theme.gresource.original"
+PREFIJO = "/org/gnome/shell/theme/"
+HOJAS = ["gnome-shell-dark.css", "gnome-shell-light.css", "gnome-shell-high-contrast.css"]
+MARCA = "/* PicPhotoViewer:inicio */"
+MAX_BYTES = 40 * 1024 * 1024
+
+# la URL siempre apunta a la ruta REAL (GDM la lee en el sistema instalado)
+BLOQUE = """
+%s
+#lockDialogGroup {
+  background: #222226 url("file:///var/lib/picphotoviewer/gdm-fondo.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat; }
+/* PicPhotoViewer:fin */
+""" % MARCA
+
+
+def morir(msg, codigo=1):
+    print("picphotoviewer-gdm: " + msg, file=sys.stderr)
+    sys.exit(codigo)
+
+
+def correr(*args):
+    r = subprocess.run(args, capture_output=True)
+    if r.returncode != 0:
+        morir("falló %s: %s" % (args[0], r.stderr.decode(errors="replace").strip()))
+    return r.stdout
+
+
+def recursos(archivo):
+    return [l for l in correr("gresource", "list", archivo).decode().split("\n") if l]
+
+
+def esta_parcheado(archivo):
+    try:
+        css = correr("gresource", "extract", archivo, PREFIJO + HOJAS[0])
+    except SystemExit:
+        return False
+    return MARCA.encode() in css
+
+
+def parchear():
+    if not os.path.isfile(GRESOURCE):
+        morir("no existe " + GRESOURCE)
+    os.makedirs(VAR, mode=0o755, exist_ok=True)
+    if esta_parcheado(GRESOURCE):
+        if not os.path.isfile(ORIGINAL):
+            morir("el tema ya está parcheado y no hay copia del original")
+        fuente = ORIGINAL
+    else:
+        # tema de fábrica (primera vez, o gnome-shell recién actualizado)
+        tmp = ORIGINAL + ".tmp"
+        shutil.copy2(GRESOURCE, tmp)
+        os.replace(tmp, ORIGINAL)
+        fuente = ORIGINAL
+
+    lista = recursos(fuente)
+    if not any(r.endswith(HOJAS[0]) for r in lista):
+        morir("el tema no trae %s: versión de GNOME no soportada" % HOJAS[0])
+
+    with tempfile.TemporaryDirectory(prefix="ppv-gdm-") as tmp:
+        for r in lista:
+            destino = os.path.join(tmp, r.lstrip("/"))
+            os.makedirs(os.path.dirname(destino), exist_ok=True)
+            datos = correr("gresource", "extract", fuente, r)
+            if r.startswith(PREFIJO) and r[len(PREFIJO):] in HOJAS:
+                datos = datos.rstrip(b"\n") + b"\n" + BLOQUE.encode()
+            with open(destino, "wb") as f:
+                f.write(datos)
+        xml = os.path.join(tmp, "tema.gresource.xml")
+        with open(xml, "w", encoding="utf-8") as f:
+            f.write('<?xml version="1.0" encoding="UTF-8"?>\n<gresources>\n  <gresource prefix="/">\n')
+            for r in lista:
+                ruta = r.lstrip("/").replace("&", "&amp;").replace("<", "&lt;")
+                f.write("    <file>%s</file>\n" % ruta)
+            f.write("  </gresource>\n</gresources>\n")
+        nuevo = GRESOURCE + ".ppv-nuevo"
+        correr("glib-compile-resources", "--sourcedir", tmp, "--target", nuevo, xml)
+
+    # verificar ANTES de reemplazar
+    if sorted(recursos(nuevo)) != sorted(lista) or not esta_parcheado(nuevo):
+        os.remove(nuevo)
+        morir("el tema compilado no salió como se esperaba; no se tocó nada")
+    os.chmod(nuevo, 0o644)
+    os.replace(nuevo, GRESOURCE)
+
+
+def aplicar(imagen):
+    if not os.path.isfile(imagen) or os.path.islink(imagen):
+        morir("no es un archivo: " + imagen)
+    if os.path.getsize(imagen) > MAX_BYTES:
+        morir("la imagen pesa más de 40 MB")
+    with open(imagen, "rb") as f:
+        datos = f.read(MAX_BYTES + 1)
+    if not datos.startswith(b"\xff\xd8\xff"):
+        morir("la imagen no es un JPEG")
+    os.makedirs(VAR, mode=0o755, exist_ok=True)
+    tmp = FONDO + ".tmp"
+    with open(tmp, "wb") as f:
+        f.write(datos)
+    os.chmod(tmp, 0o644)
+    os.replace(tmp, FONDO)
+    parchear()
+    print("aplicado")
+
+
+def restaurar():
+    if os.path.isfile(GRESOURCE) and esta_parcheado(GRESOURCE):
+        if not os.path.isfile(ORIGINAL):
+            morir("no hay copia del original para restaurar")
+        tmp = GRESOURCE + ".ppv-nuevo"
+        shutil.copy2(ORIGINAL, tmp)
+        os.replace(tmp, GRESOURCE)
+    for p in (FONDO, ORIGINAL):
+        if os.path.exists(p):
+            os.remove(p)
+    print("original")
+
+
+def main():
+    if len(sys.argv) < 2:
+        morir("uso: picphotoviewer-gdm aplicar <imagen.jpg> | reaplicar | restaurar | estado", 2)
+    orden = sys.argv[1]
+    if not RAIZ and os.geteuid() != 0:
+        morir("tiene que correr como root (pkexec)")
+    if orden == "aplicar" and len(sys.argv) == 3:
+        aplicar(sys.argv[2])
+    elif orden == "reaplicar":
+        if os.path.isfile(FONDO):
+            parchear()
+            print("aplicado")
+    elif orden == "restaurar":
+        restaurar()
+    elif orden == "estado":
+        print("aplicado" if os.path.isfile(GRESOURCE) and esta_parcheado(GRESOURCE) else "original")
+    else:
+        morir("orden desconocida: " + orden, 2)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,39 @@
+# ---------------------------------------------------------------------------
+# PicPhotoViewer — qué NO entra al repositorio            (creado 2026-11-08)
+#
+# Criterio: lo que no puede salir de esta máquina, lo que se regenera solo, y
+# lo que pesa sin aportar. Agregar acá TODO lo que el proyecto genere.
+# ---------------------------------------------------------------------------
+
+# Credenciales. El * es a propósito: los respaldos .env.bak.<fecha> llevan la
+# contraseña adentro (auditoría 2026-07-31).
+.env*
+certs/
+
+# Generado o efímero
+__pycache__/
+*.pyc
+*.pyo
+*.log
+*.tmp
+*.zip
+*.sha256
+logs/
+vendor/
+
+# Del editor / del sistema
+.claude/
+*.swp
+*~
+.DS_Store
+
+# OJO: version.itc NO se ignora. Lo escribe el poller antes de cada release y
+# viaja dentro del paquete: es parte del contrato de deploy.
+
+# Paquetes armados (se publican en GitHub Releases, no en git)
+dist/
+*.deb
+
+# Estándar interno de ITCorp: describe infraestructura propia y el repo es
+# PÚBLICO (decidido 2026-11-08). Vive solo en el disco de dev.
+ESTANDAR-ITCorp.md

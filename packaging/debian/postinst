@@ -1,0 +1,20 @@
+#!/bin/sh
+set -e
+AYUDANTE=/usr/libexec/picphotoviewer/picphotoviewer-gdm
+
+case "$1" in
+  configure)
+    command -v update-desktop-database >/dev/null && update-desktop-database -q /usr/share/applications || true
+    command -v gtk-update-icon-cache >/dev/null && gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+    # reinstalación o actualización con un fondo de GDM puesto: reaplicarlo
+    if [ -f /var/lib/picphotoviewer/gdm-fondo.jpg ]; then
+      "$AYUDANTE" reaplicar >/dev/null || echo "PicPhotoViewer: no se pudo reaplicar el fondo de GDM" >&2
+    fi
+    ;;
+  triggered)
+    if [ -f /var/lib/picphotoviewer/gdm-fondo.jpg ]; then
+      "$AYUDANTE" reaplicar >/dev/null || echo "PicPhotoViewer: no se pudo reaplicar el fondo de GDM tras actualizar gnome-shell" >&2
+    fi
+    ;;
+esac
+exit 0

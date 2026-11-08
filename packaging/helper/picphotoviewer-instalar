@@ -1,0 +1,49 @@
+#!/usr/bin/python3 -I
+# ---------------------------------------------------------------------------
+# picphotoviewer-instalar <archivo.deb> — instala una versión nueva de
+# PicPhotoViewer bajada de GitHub. Corre como ROOT, vía pkexec.
+#
+# Solo instala paquetes llamados «picphotoviewer»: la acción de polkit es para
+# actualizar este programa, no un instalador genérico. El .deb se copia primero
+# a un directorio de root (así no lo pueden cambiar entre la revisión y la
+# instalación) y se instala con apt para que resuelva dependencias nuevas.
+# La verificación del SHA256 contra la release ya la hizo la app.
+# ---------------------------------------------------------------------------
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+
+
+def morir(msg):
+    print("picphotoviewer-instalar: " + msg, file=sys.stderr)
+    sys.exit(1)
+
+
+def main():
+    if len(sys.argv) != 2:
+        morir("uso: picphotoviewer-instalar <archivo.deb>")
+    if os.geteuid() != 0:
+        morir("tiene que correr como root (pkexec)")
+    origen = sys.argv[1]
+    if not origen.endswith(".deb") or not os.path.isfile(origen) or os.path.islink(origen):
+        morir("no es un .deb: " + origen)
+    with tempfile.TemporaryDirectory(prefix="ppv-instalar-") as d:
+        os.chmod(d, 0o755)  # apt baja privilegios a _apt y tiene que poder leerlo
+        deb = os.path.join(d, "picphotoviewer.deb")
+        shutil.copyfile(origen, deb)
+        os.chmod(deb, 0o644)
+        r = subprocess.run(["dpkg-deb", "-f", deb, "Package"], capture_output=True, text=True)
+        if r.returncode != 0 or r.stdout.strip() != "picphotoviewer":
+            morir("el archivo no es un paquete de PicPhotoViewer")
+        env = dict(os.environ, DEBIAN_FRONTEND="noninteractive")
+        r = subprocess.run(["apt-get", "install", "-y", "--no-install-recommends", deb],
+                           capture_output=True, text=True, env=env)
+        if r.returncode != 0:
+            morir((r.stderr or r.stdout).strip()[-2000:])
+    print("instalado")
+
+
+if __name__ == "__main__":
+    main()
