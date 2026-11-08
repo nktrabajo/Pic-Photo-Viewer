@@ -1,3 +1,10 @@
+picphotoviewer (0.1.2) unstable; urgency=low
+
+  * Ícono nuevo de la aplicación (aportado por el autor), en PNG para cada
+    tamaño del tema hicolor (16 a 512 px); reemplaza al SVG provisional.
+
+ -- Neils Karlson <nktrabajo@gmail.com>  Sun, 08 Nov 2026 17:35:00 -0600
+
 picphotoviewer (0.1.1) unstable; urgency=low
 
   * Sin cambios en el programa: versión para probar el aviso de versión

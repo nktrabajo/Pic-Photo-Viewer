@@ -31,7 +31,12 @@ def _app():
     QApplication.setApplicationName("PicPhotoViewer")
     QApplication.setDesktopFileName("picphotoviewer")
     app = QApplication(sys.argv[:1])
-    app.setWindowIcon(QIcon.fromTheme("picphotoviewer"))
+    icono = QIcon.fromTheme("picphotoviewer")
+    if icono.isNull():  # corriendo desde el código, sin instalar
+        dev = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "picphotoviewer.png")
+        if os.path.isfile(dev):
+            icono = QIcon(dev)
+    app.setWindowIcon(icono)
     return app
 
 

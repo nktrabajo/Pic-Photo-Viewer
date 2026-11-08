@@ -178,6 +178,20 @@ lee UTF-8 o latin-1 (Picasa en Windows escribía ANSI).
 - Menú ▼ → «Buscar actualizaciones» fuerza la consulta; «No avisar de esta versión» la
   silencia hasta la siguiente.
 
+### 3.8 Ícono de la aplicación (2026-11-08, pedido del usuario — v0.1.2)
+
+El usuario aportó `icon.png` (movido a `assets/icono-original.png`): 1263×1246, no
+cuadrado, con **21.984 píxeles sueltos semitransparentes** (alfa hasta 185) alrededor del
+círculo, restos del recorte del fondo. `tools/preparar_icono.py` borra todo lo que cae fuera
+de la elipse del logo (borde suavizado de 1,5 px), lo centra en un cuadrado con 3 % de
+margen y guarda `assets/picphotoviewer.png` (1024×1024). `construir_deb.sh` genera de ahí
+un PNG por tamaño del tema hicolor (16, 22, 24, 32, 48, 64, 96, 128, 256, 512); el SVG
+provisional se eliminó (dpkg lo borra al actualizar). Revisado a ojo sobre fondo claro y
+oscuro: bordes limpios; a 16 px el pingüino casi no se distingue.
+
+**Aviso dado al usuario**: el círculo de aspas multicolor es casi idéntico al logo de
+Picasa (marca de Google). Lo decidió usar igual; no se «corrige» sin preguntarle.
+
 ### 3.7 Logs (2026-11-08)
 
 `~/Logs/PicPhotoViewer-<fecha>.txt` como el estándar, pero solo se registran **acciones**
@@ -213,10 +227,12 @@ packaging/debian/               control.in, postinst, prerm, postrm, triggers, c
 packaging/polkit/               acciones de pkexec
 packaging/nautilus/             extensión del menú contextual
 packaging/picphotoviewer.desktop
-assets/picphotoviewer.svg       ícono propio
+assets/icono-original.png      ícono aportado por el usuario (2026-11-08), tal cual
+assets/picphotoviewer.png       el mismo, limpio y cuadrado 1024×1024 (tools/preparar_icono.py)
 tools/construir_deb.sh          arma dist/*.deb + .sha256
 tools/publicar_release.sh       tag + push + gh release (LO CORRE EL USUARIO)
 tools/check_system.sh           diagnóstico solo lectura
+tools/preparar_icono.py         original → picphotoviewer.png (borra el halo del recorte)
 tools/pruebas/                  prueba_todo.py (53) y prueba_visor.py (20)
 ```
 

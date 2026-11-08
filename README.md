@@ -4,8 +4,8 @@ Visor de fotos para Linux al estilo del clásico visor de fotos de Picasa: la fo
 **sobre el escritorio**, con una capa oscura translúcida detrás, la tira de fotos de la
 carpeta abajo y la barra de botones al pie. Clic fuera de la foto (o Esc) y desaparece.
 
-> Proyecto independiente, sin relación con Google ni con Picasa. Los íconos y gráficos
-> son propios.
+> Proyecto independiente, sin relación con Google ni con Picasa. Los íconos de la barra
+> están dibujados en el propio código.
 
 ## Qué hace
 

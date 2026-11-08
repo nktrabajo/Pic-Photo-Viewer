@@ -23,7 +23,7 @@ trap 'rm -rf "$ARMADO"' EXIT
 P="$ARMADO/pkg"
 
 install -d "$P/DEBIAN" "$P/usr/bin" "$P/usr/share/picphotoviewer" "$P/usr/libexec/picphotoviewer" \
-  "$P/usr/share/applications" "$P/usr/share/icons/hicolor/scalable/apps" \
+  "$P/usr/share/applications" \
   "$P/usr/share/polkit-1/actions" "$P/usr/share/nautilus-python/extensions" \
   "$P/usr/share/doc/picphotoviewer"
 
@@ -40,7 +40,19 @@ chmod 755 "$P/usr/bin/picphotoviewer"
 install -m 755 "$RAIZ/packaging/helper/picphotoviewer-gdm" "$RAIZ/packaging/helper/picphotoviewer-instalar" \
   "$P/usr/libexec/picphotoviewer/"
 install -m 644 "$RAIZ/packaging/picphotoviewer.desktop" "$P/usr/share/applications/"
-install -m 644 "$RAIZ/assets/picphotoviewer.svg" "$P/usr/share/icons/hicolor/scalable/apps/"
+# ícono: un PNG por tamaño del tema hicolor, desde assets/picphotoviewer.png (1024×1024,
+# lo genera tools/preparar_icono.py a partir del original del usuario)
+python3 -I - "$RAIZ/assets/picphotoviewer.png" "$P/usr/share/icons/hicolor" <<'PY'
+import os, sys
+from PIL import Image
+fuente, destino = sys.argv[1], sys.argv[2]
+im = Image.open(fuente).convert("RGBA")
+for t in (16, 22, 24, 32, 48, 64, 96, 128, 256, 512):
+    d = os.path.join(destino, f"{t}x{t}", "apps")
+    os.makedirs(d, exist_ok=True)
+    im.resize((t, t), Image.LANCZOS).save(os.path.join(d, "picphotoviewer.png"), optimize=True)
+PY
+find "$P/usr/share/icons" -type f -exec chmod 644 {} +
 install -m 644 "$RAIZ/packaging/polkit/com.itcorp.picphotoviewer.policy" "$P/usr/share/polkit-1/actions/"
 install -m 644 "$RAIZ/packaging/nautilus/picphotoviewer-nautilus.py" "$P/usr/share/nautilus-python/extensions/"
 install -m 644 "$RAIZ/packaging/debian/copyright" "$P/usr/share/doc/picphotoviewer/"
