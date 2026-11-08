@@ -37,6 +37,19 @@ chmod 644 "$DEB"
 
 sudo apt-get install -y "$DEB"
 nautilus -q 2>/dev/null || true
+
+# Asociar las imágenes: es por usuario (~/.config/mimeapps.list), por eso lo
+# hace este script —que corre como el usuario— y no el .deb, que corre como root.
+# Con `curl … | bash` la entrada estándar es el script: se pregunta por la terminal.
+echo
+RESP="s"
+if [ -r /dev/tty ]; then
+  read -r -p "¿Abrir las imágenes con PicPhotoViewer al hacer doble clic? [S/n] " RESP </dev/tty || RESP="n"  # sin terminal: no asociar sin preguntar
+fi
+if [[ ! "$RESP" =~ ^[nN] ]]; then
+  picphotoviewer --predeterminado || echo "No se pudo asociar; se puede hacer después desde el menú ▼ del visor."
+else
+  echo "No se asociaron. El visor lo va a ofrecer la primera vez que lo abras."
+fi
 echo
 echo "Listo. Clic derecho en una foto → «Abrir con PicPhotoViewer»."
-echo "Para usarlo con doble clic: menú ▼ del visor → «Usar como visor de imágenes predeterminado»."

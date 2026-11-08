@@ -24,6 +24,8 @@ DEFAULTS = {
     "buscar_actualizaciones": "si",
     "ultima_busqueda": "0",       # epoch de la última consulta a GitHub
     "version_ignorada": "",       # «no volver a avisar de esta versión»
+    "preguntar_predeterminado": "si",   # «no» = el usuario pidió no volver a preguntar
+    "ultima_pregunta_predeterminado": "0",
 }
 
 EDITORES_CONOCIDOS = ["gimp", "pinta", "krita", "kolourpaint", "drawing", "darktable"]

@@ -35,11 +35,12 @@ curl -fsSL https://raw.githubusercontent.com/nktrabajo/Pic-Photo-Viewer/main/ins
 ```
 
 Baja el `.deb` de la última [release](https://github.com/nktrabajo/Pic-Photo-Viewer/releases),
-verifica su SHA256, lo instala con `apt` y reinicia Nautilus para que cargue el menú
-contextual. A mano es lo mismo: bajar el `.deb` y `sudo apt install /ruta/al/picphotoviewer_*_all.deb`.
+verifica su SHA256, lo instala con `apt`, reinicia Nautilus para que cargue el menú
+contextual y **pregunta si abrir las imágenes con PicPhotoViewer** al hacer doble clic. A mano es lo mismo: bajar el `.deb` y `sudo apt install /ruta/al/picphotoviewer_*_all.deb`.
 
-Para que las fotos se abran con PicPhotoViewer al hacer doble clic: menú ▼ del visor →
-«Usar como visor de imágenes predeterminado».
+Si se instaló de otra forma, el visor lo ofrece la primera vez que se abre. También se
+puede en cualquier momento desde el menú ▼ → «Usar como visor de imágenes
+predeterminado», o con `picphotoviewer --predeterminado`.
 
 Probado en Debian 13 con GNOME 48 (X11). Requiere Python 3.11+ y PySide6 de los
 repositorios de Debian (`apt` los instala solos).

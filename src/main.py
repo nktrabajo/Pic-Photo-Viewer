@@ -54,12 +54,24 @@ def main(argv=None):
     ap.add_argument("--fondo", metavar="IMAGEN")
     ap.add_argument("--fondo-gdm", metavar="IMAGEN")
     ap.add_argument("--restaurar-gdm", action="store_true")
+    ap.add_argument("--predeterminado", action="store_true",
+                    help="usar PicPhotoViewer como visor de imágenes predeterminado (sin ventana)")
     ap.add_argument("--version", action="store_true")
     a = ap.parse_args(argv)
     log = get_logger()
 
     if a.version:
         print(config.version())
+        return 0
+
+    if a.predeterminado:
+        from visor import acciones
+        try:
+            acciones.hacer_predeterminado()
+        except acciones.ErrorAccion as e:
+            print(f"No se pudo: {e}", file=sys.stderr)
+            return 1
+        print("PicPhotoViewer es ahora el visor de imágenes predeterminado.")
         return 0
 
     app = _app()
@@ -113,12 +125,26 @@ def main(argv=None):
     v.mostrar()
     from PySide6.QtCore import QTimer
 
+    from PySide6.QtWidgets import QApplication
+
     def _buscar():
         try:
-            if v.isVisible():
-                v.buscar_actualizaciones(manual=False)
+            if not v.isVisible():
+                return
+            if QApplication.activeModalWidget() is not None:
+                QTimer.singleShot(5000, _buscar)  # no encimar dos preguntas
+                return
+            v.buscar_actualizaciones(manual=False)
         except RuntimeError:  # la ventana ya se cerró y Qt la destruyó
             pass
+
+    def _predeterminado():
+        try:
+            if v.isVisible():
+                v.preguntar_predeterminado()
+        except RuntimeError:
+            pass
+    QTimer.singleShot(700, _predeterminado)
     QTimer.singleShot(3000, _buscar)
     return app.exec()
 

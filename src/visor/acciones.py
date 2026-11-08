@@ -124,12 +124,33 @@ TIPOS_MIME = [
 
 def hacer_predeterminado():
     """Visor predeterminado para el usuario actual (no se puede desde el .deb:
-    la asociación es por usuario)."""
+    la asociación es por usuario, en ~/.config/mimeapps.list)."""
+    # Probado 2026-11-08: si la carpeta de config no existe, xdg-mime falla a
+    # medias (escribe solo parte de los tipos) y devuelve error.
+    os.makedirs(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"), exist_ok=True)
     r = subprocess.run(["xdg-mime", "default", "picphotoviewer.desktop", *TIPOS_MIME],
                        capture_output=True, text=True)
     if r.returncode != 0:
         raise ErrorAccion(r.stderr.strip() or "xdg-mime falló")
     log.info("PicPhotoViewer quedó como visor predeterminado", {"tipos": len(TIPOS_MIME)})
+
+
+DIAS_ENTRE_PREGUNTAS = 7
+
+
+def debe_preguntar_predeterminado(ahora=None):
+    """¿Ofrecer «usar como visor predeterminado» al abrir? Una vez, y si dijo
+    «Ahora no», de nuevo a los 7 días; nunca si dijo «No volver a preguntar»."""
+    import time
+    if config.get("preguntar_predeterminado").lower() not in ("si", "sí", "1", "true", "yes"):
+        return False
+    try:
+        ultima = float(config.get("ultima_pregunta_predeterminado") or 0)
+    except ValueError:
+        ultima = 0
+    if (ahora or time.time()) - ultima < DIAS_ENTRE_PREGUNTAS * 86400:
+        return False
+    return not es_predeterminado()
 
 
 def es_predeterminado():

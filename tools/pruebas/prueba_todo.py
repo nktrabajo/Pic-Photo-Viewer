@@ -195,6 +195,7 @@ check("fondo xml de GNOME", gnome.primera_imagen_xml("/no/existe.xml") is None)
 # ---------------------------------------------------------------- rotar
 print("rotar")
 from visor import acciones  # noqa: E402
+from core import config  # noqa: E402
 
 png = imagen(os.path.join(TMP, "rot.png"), 50, 20, "#336699")
 acciones.rotar(png, 90)
@@ -208,9 +209,46 @@ if shutil.which("exiftran"):
 else:
     print("  (exiftran no instalado: la rotación de JPEG no se probó)")
 
+# ---------------------------------------------------------------- visor predeterminado
+print("visor predeterminado (mimeapps.list aislado)")
+os.makedirs(TMP + "/datos/applications", exist_ok=True)
+shutil.copy(os.path.join(RAIZ_PROY, "packaging", "picphotoviewer.desktop"), TMP + "/datos/applications/")
+os.environ["XDG_CURRENT_DESKTOP"] = "GNOME"
+shutil.rmtree(TMP + "/config", ignore_errors=True)  # carpeta de config inexistente: el caso que fallaba
+check("no es predeterminado al inicio", not acciones.es_predeterminado())
+check("pregunta la primera vez", acciones.debe_preguntar_predeterminado())
+acciones.hacer_predeterminado()
+check("queda predeterminado", acciones.es_predeterminado())
+mime = open(TMP + "/config/mimeapps.list", encoding="utf-8").read()
+check("todos los tipos asociados", all(f"{t}=picphotoviewer.desktop" in mime for t in acciones.TIPOS_MIME), mime)
+check("ya predeterminado: no pregunta", not acciones.debe_preguntar_predeterminado())
+import time as _t
+os.remove(TMP + "/config/mimeapps.list")
+config.set("ultima_pregunta_predeterminado", int(_t.time()))
+check("«Ahora no»: no repite antes de 7 días", not acciones.debe_preguntar_predeterminado())
+check("«Ahora no»: repite a los 7 días", acciones.debe_preguntar_predeterminado(ahora=_t.time() + 8 * 86400))
+config.set("preguntar_predeterminado", "no")
+check("«No volver a preguntar»", not acciones.debe_preguntar_predeterminado(ahora=_t.time() + 99 * 86400))
+# desinstalar.sh limpia la asociación sin tocar las de otros programas
+acciones.hacer_predeterminado()
+with open(TMP + "/config/mimeapps.list", "a", encoding="utf-8") as f:
+    f.write("text/plain=org.gnome.TextEditor.desktop\n")
+falsos = TMP + "/bin"
+os.makedirs(falsos, exist_ok=True)
+for n, cuerpo in (("dpkg", "exit 1"), ("nautilus", "exit 0"), ("gsettings", "echo \"''\"")):
+    with open(f"{falsos}/{n}", "w") as f:
+        f.write(f"#!/bin/sh\n{cuerpo}\n")
+    os.chmod(f"{falsos}/{n}", 0o755)
+r = subprocess.run(["bash", os.path.join(RAIZ_PROY, "desinstalar.sh"), "--todo"], stdin=subprocess.DEVNULL,
+                   capture_output=True, text=True, env=dict(os.environ, PATH=falsos + ":" + os.environ["PATH"]))
+mime = open(TMP + "/config/mimeapps.list", encoding="utf-8").read()
+check("desinstalar quita la asociación", "picphotoviewer" not in mime and r.returncode == 0, r.stdout + r.stderr)
+check("desinstalar respeta las demás", "text/plain=org.gnome.TextEditor.desktop" in mime)
+
 # ---------------------------------------------------------------- actualizaciones
 print("actualizaciones desde GitHub (servidor local)")
 from actualizar import github  # noqa: E402
+config.set("ultima_busqueda", 0)
 
 check("versiones", github.version_tupla("v0.10.0") > github.version_tupla("0.9.9")
       and github.version_tupla("v1.2") == (1, 2, 0))
@@ -250,7 +288,6 @@ try:
 except RuntimeError:
     check("SHA256 distinto se rechaza", True)
 check("toca buscar la 1ª vez", github.toca_buscar())
-from core import config  # noqa: E402
 config.set("ultima_busqueda", 10**10)
 check("no busca dos veces el mismo día", not github.toca_buscar())
 srv.shutdown()

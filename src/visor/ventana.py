@@ -719,6 +719,27 @@ class Visor(QWidget):
         acciones.hacer_predeterminado()
         self.avisar("PicPhotoViewer es ahora el visor de imágenes predeterminado")
 
+    def preguntar_predeterminado(self):
+        """Primera vez que se abre (o 7 días después de «Ahora no»)."""
+        import time
+        if not acciones.debe_preguntar_predeterminado():
+            return
+        config.set("ultima_pregunta_predeterminado", int(time.time()))
+        caja = QMessageBox(self)
+        caja.setWindowTitle("PicPhotoViewer")
+        caja.setIcon(QMessageBox.Icon.Question)
+        caja.setText("<b>¿Abrir las imágenes con PicPhotoViewer?</b><br>"
+                     "Al hacer doble clic en una foto se abrirá con este visor.")
+        b_si = caja.addButton("Sí, usar PicPhotoViewer", QMessageBox.ButtonRole.AcceptRole)
+        caja.addButton("Ahora no", QMessageBox.ButtonRole.RejectRole)
+        b_nunca = caja.addButton("No volver a preguntar", QMessageBox.ButtonRole.DestructiveRole)
+        caja.setDefaultButton(b_si)
+        caja.exec()
+        if caja.clickedButton() is b_si:
+            self._seguro(self.hacer_predeterminado)
+        elif caja.clickedButton() is b_nunca:
+            config.set("preguntar_predeterminado", "no")
+
     def menu(self, pos, arriba=False):
         m = QMenu(self)
         m.setStyleSheet(_ESTILO_MENU)

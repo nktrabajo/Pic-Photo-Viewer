@@ -30,7 +30,9 @@ anota lo propio de PicPhotoViewer.
        `.sha256`. Verificado desde afuera: la API devuelve `v0.1.0`, el `.deb` baja y su
        SHA256 coincide, `instalar.sh` responde por raw.githubusercontent. `gh` quedó
        instalado y con sesión de `nktrabajo` en esta máquina.
-3. [ ] Lo de «Qué le falta al proyecto», por prioridad del usuario.
+3. [x] ~~**v0.1.3** (asociación de imágenes, 3.9)~~ — publicada 2026-11-08 con el visto
+       bueno del usuario.
+4. [ ] Lo de «Qué le falta al proyecto», por prioridad del usuario.
 
 **Parados a propósito, no arrancar sin retomarlos con el usuario**: —
 
@@ -189,12 +191,28 @@ un PNG por tamaño del tema hicolor (16, 22, 24, 32, 48, 64, 96, 128, 256, 512);
 provisional se eliminó (dpkg lo borra al actualizar). Revisado a ojo sobre fondo claro y
 oscuro: bordes limpios; a 16 px el pingüino casi no se distingue.
 
-En GitHub: el ícono encabeza el `README.md` (160 px). `assets/vista-previa-social.png`
+Descripción y 14 temas del repo puestos con `gh repo edit` (2026-11-08). En GitHub: el ícono encabeza el `README.md` (160 px). `assets/vista-previa-social.png`
 (1280×640) es para la «Social preview» del repo, que **no se puede subir por la API**: la
 sube el usuario en Settings → General → Social preview.
 
 **Aviso dado al usuario**: el círculo de aspas multicolor es casi idéntico al logo de
 Picasa (marca de Google). Lo decidió usar igual; no se «corrige» sin preguntarle.
+
+### 3.9 Asociar las imágenes al visor (2026-11-08, pedido del usuario — v0.1.3)
+
+La asociación es **por usuario** (`~/.config/mimeapps.list`): el `.deb` corre como root y
+no puede hacerla. Por eso, en dos lugares:
+- `instalar.sh` (corre como el usuario) pregunta al final por `/dev/tty` y llama a
+  `picphotoviewer --predeterminado`. Sin terminal, **no** asocia.
+- El visor pregunta 0,7 s después de abrir (`Visor.preguntar_predeterminado`) si no es el
+  predeterminado: «Sí» / «Ahora no» (repite a los 7 días) / «No volver a preguntar»
+  (`config: preguntar_predeterminado=no`). El aviso de actualización espera a que no haya
+  otra pregunta abierta, para no encimarlas.
+- `desinstalar.sh` borra las líneas `…=picphotoviewer.desktop` de `mimeapps.list`.
+
+**Medido**: con `xdg-mime` y GIO en un entorno aislado, la asociación sí cambia lo que usa
+Nautilus. **Bug encontrado al medir** (9.d): si `~/.config` no existe, `xdg-mime` falla a
+medias.
 
 ### 3.7 Logs (2026-11-08)
 
@@ -238,12 +256,12 @@ tools/construir_deb.sh          arma dist/*.deb + .sha256
 tools/publicar_release.sh       tag + push + gh release (LO CORRE EL USUARIO)
 tools/check_system.sh           diagnóstico solo lectura
 tools/preparar_icono.py         original → picphotoviewer.png (borra el halo del recorte)
-tools/pruebas/                  prueba_todo.py (53) y prueba_visor.py (20)
+tools/pruebas/                  prueba_todo.py (64) y prueba_visor.py (20)
 ```
 
 ## Cómo se verificó (2026-11-08)
 
-- **`tools/pruebas/prueba_todo.py` — 53 comprobaciones, 0 fallas** (2,4 s): orden y
+- **`tools/pruebas/prueba_todo.py` — 64 comprobaciones, 0 fallas** (53 en la v0.1.0; +11 de la asociación en la v0.1.3) (2,4 s): orden y
   formatos; `.picasa.ini` (conserva claves de Picasa, borra secciones vacías, sin permiso
   falla); composición píxel por píxel con **la disposición real de los 4 monitores de dev**
   (rellenar, ajustar, centrar, extendida sobre 2 pantallas); `aplicar()` con gsettings falso
@@ -348,6 +366,15 @@ que `QFile.moveToTrash` devolvía `False` habiendo movido el archivo, y se cambi
 `acciones.py` en consecuencia. **Era falso**: la prueba usaba un `HOME` que no existía, así
 que ni Qt ni gio podían crear la papelera; el «No such file» era la carpeta de la papelera,
 no la foto. Se revirtió el cambio en `acciones.py` y se creó el `HOME` en la prueba.
+
+### 9.d La asociación de imágenes quedaba a medias sin `~/.config` (2026-11-08)
+
+- **Síntoma** (en la prueba aislada, antes de publicar): `xdg-mime default` dio
+  `touch: cannot touch …/mimeapps.list` y el archivo quedó con una línea suelta.
+- **Causa raíz**: `xdg-mime` no crea la carpeta de configuración.
+- **Arreglo**: `src/visor/acciones.py` `hacer_predeterminado` la crea antes.
+- **Verificado**: la prueba arranca SIN la carpeta; sacando el `makedirs` fallan 3
+  comprobaciones.
 
 ## Caminos descartados por experimento (no por opinión)
 

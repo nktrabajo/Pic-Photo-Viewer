@@ -15,8 +15,8 @@
 #   3. Pregunta si borrar los datos personales (preferencias, fondos compuestos,
 #      caché). No toca las estrellas (.picasa.ini de cada carpeta): son de Picasa
 #      también y siguen sirviendo.
-#   4. Si PicPhotoViewer era el visor predeterminado, GNOME vuelve solo al
-#      siguiente que tenga registrado para imágenes.
+#   4. Quita de ~/.config/mimeapps.list las asociaciones a PicPhotoViewer: las
+#      imágenes vuelven a abrirse con el visor de antes.
 # ---------------------------------------------------------------------------
 set -euo pipefail
 TODO=0
@@ -47,6 +47,14 @@ if command -v gsettings >/dev/null; then
     gsettings set org.gnome.desktop.background picture-uri-dark "$NUEVA"
     echo "Tu fondo de escritorio actual se conservó en $DEST/."
   fi
+fi
+
+# 2b. quitar la asociación de imágenes (si no, quedan apuntando a un programa que
+#     ya no existe; GNOME lo ignora, pero se deja limpio)
+MIMEAPPS="${XDG_CONFIG_HOME:-$HOME/.config}/mimeapps.list"
+if [ -f "$MIMEAPPS" ] && grep -q '=picphotoviewer\.desktop;*$' "$MIMEAPPS"; then
+  sed -i '/=picphotoviewer\.desktop;*$/d' "$MIMEAPPS"
+  echo "Las imágenes vuelven a abrirse con el visor que tenías antes."
 fi
 
 # 3. datos personales
