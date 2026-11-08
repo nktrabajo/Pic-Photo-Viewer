@@ -1,3 +1,10 @@
+picphotoviewer (0.1.1) unstable; urgency=low
+
+  * Sin cambios en el programa: versión para probar el aviso de versión
+    nueva desde GitHub y el ciclo completo de publicación.
+
+ -- Neils Karlson <nktrabajo@gmail.com>  Sun, 08 Nov 2026 17:30:00 -0600
+
 picphotoviewer (0.1.0) unstable; urgency=medium
 
   * Primera versión: visor estilo Picasa sobre el escritorio, tira de fotos,
