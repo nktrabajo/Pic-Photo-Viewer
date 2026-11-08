@@ -24,10 +24,12 @@ anota lo propio de PicPhotoViewer.
        **Instalar SIEMPRE desde una copia local**: dentro del montaje SSHFS, root no puede
        leer (montado sin `allow_other`) y apt 3.0 responde un engañoso «Unsupported file
        … given on commandline» (visto 2026-11-08).
-2. [ ] **Primer push + release `v0.1.0`** (lo hace el usuario): `git push -u origin main`
-       y la release con los 2 adjuntos de `dist/` (web de GitHub, o
-       `./tools/publicar_release.sh` con `gh`). Desde ahí funciona `instalar.sh` y el aviso
-       de versión nueva.
+2. [x] ~~**Primer push + release `v0.1.0`**~~ — PUBLICADA 2026-11-08 (Claude, con
+       autorización explícita del usuario): `main` + tag `v0.1.0` y la release
+       https://github.com/nktrabajo/Pic-Photo-Viewer/releases/tag/v0.1.0 con el `.deb` y el
+       `.sha256`. Verificado desde afuera: la API devuelve `v0.1.0`, el `.deb` baja y su
+       SHA256 coincide, `instalar.sh` responde por raw.githubusercontent. `gh` quedó
+       instalado y con sesión de `nktrabajo` en esta máquina.
 3. [ ] Lo de «Qué le falta al proyecto», por prioridad del usuario.
 
 **Parados a propósito, no arrancar sin retomarlos con el usuario**: —
