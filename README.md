@@ -1,4 +1,10 @@
-# PicPhotoViewer
+<p align="center">
+  <img src="assets/picphotoviewer.png" alt="Ícono de PicPhotoViewer" width="160">
+</p>
+
+<h1 align="center">PicPhotoViewer</h1>
+
+<p align="center">Visor de fotos para Linux al estilo del clásico visor de Picasa</p>
 
 Visor de fotos para Linux al estilo del clásico visor de fotos de Picasa: la foto se abre
 **sobre el escritorio**, con una capa oscura translúcida detrás, la tira de fotos de la

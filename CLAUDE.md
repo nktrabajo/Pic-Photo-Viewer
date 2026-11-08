@@ -189,6 +189,10 @@ un PNG por tamaño del tema hicolor (16, 22, 24, 32, 48, 64, 96, 128, 256, 512);
 provisional se eliminó (dpkg lo borra al actualizar). Revisado a ojo sobre fondo claro y
 oscuro: bordes limpios; a 16 px el pingüino casi no se distingue.
 
+En GitHub: el ícono encabeza el `README.md` (160 px). `assets/vista-previa-social.png`
+(1280×640) es para la «Social preview» del repo, que **no se puede subir por la API**: la
+sube el usuario en Settings → General → Social preview.
+
 **Aviso dado al usuario**: el círculo de aspas multicolor es casi idéntico al logo de
 Picasa (marca de Google). Lo decidió usar igual; no se «corrige» sin preguntarle.
 
@@ -229,6 +233,7 @@ packaging/nautilus/             extensión del menú contextual
 packaging/picphotoviewer.desktop
 assets/icono-original.png      ícono aportado por el usuario (2026-11-08), tal cual
 assets/picphotoviewer.png       el mismo, limpio y cuadrado 1024×1024 (tools/preparar_icono.py)
+assets/vista-previa-social.png  1280×640 para la vista previa social de GitHub
 tools/construir_deb.sh          arma dist/*.deb + .sha256
 tools/publicar_release.sh       tag + push + gh release (LO CORRE EL USUARIO)
 tools/check_system.sh           diagnóstico solo lectura
