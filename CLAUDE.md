@@ -36,12 +36,12 @@ anota lo propio de PicPhotoViewer.
 4b. [x] ~~**v0.2.1**: RAW rápidos (3.13)~~ — publicada 2026-11-08 con el visto bueno del
        usuario; en su equipo quedó instalada la 0.2.1 por apt. Nota de Obsidian:
        `Proyectos/PicPhotoViewer.md`.
-5. [ ] **Promoción** (lo hace el usuario; plan conversado 2026-11-08): subir
-       `assets/vista-previa-social.png` en Settings → Social preview (cambió con el ícono
-       nuevo); alta en AlternativeTo como alternativa a Picasa Photo Viewer; post con el GIF
+5. [ ] **Promoción** (lo hace el usuario; plan conversado 2026-11-08): alta en AlternativeTo como alternativa a Picasa Photo Viewer; post con el GIF
        en r/linux, r/debian, r/gnome; escribir a It's FOSS / OMG! Ubuntu / Linuxiac.
        Antes de anunciar en Ubuntu, probarlo en una VM (¿trae PySide6 en sus repos?).
-6. [ ] **Respaldar la clave de firma del repositorio APT** (3.11) fuera de esta máquina.
+6. [x] ~~**Respaldar la clave de firma del repositorio APT** (3.11)~~ — hecho por el usuario
+       2026-11-08 (copia cifrada `picphotoviewer-clave-apt.tar.gz.gpg`). Social preview nueva
+       subida también (verificado por GraphQL: `usesCustomOpenGraphImage: true`).
 7. [ ] Lo de «Qué le falta al proyecto», por prioridad del usuario.
 
 **Parados a propósito, no arrancar sin retomarlos con el usuario**: —
