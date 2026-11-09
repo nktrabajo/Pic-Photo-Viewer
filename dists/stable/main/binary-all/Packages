@@ -9,10 +9,10 @@ Depends: python3 (>= 3.11), python3-pyside6.qtcore, python3-pyside6.qtgui, pytho
 Recommends: qt6-image-formats-plugins, qt6-translations-l10n, python3-nautilus, libnotify-bin, xclip
 Filename: pool/main/p/picphotoviewer/picphotoviewer_0.2.0_all.deb
 Size: 147056
-MD5sum: 7234dd8f9fbbfbdec7584cac9500945e
-SHA1: 56e57d0a90336a24fb434b732c4754d4e2a711e4
-SHA256: 31965c3213c7461add32110c78d862c0e1b6dede0c50e517c65aa595a065cb09
-SHA512: 55090eeb4a8839841f247239d77173292786443bffbfde7224bb89e4e87420f332f0a54817b35cafb78e0eeaa2e47b779d800001619c8ba418cbe112e6bef1db
+MD5sum: c3b95f106863287b9dbfdf89c2884ee0
+SHA1: d8b1fc91580213e6a189304b8e4d87bba4220507
+SHA256: 18b4ad01b4fbc16b3f0f08227731abd6fd3d77c84ff7024184455fd7b7f1fa15
+SHA512: 3fada34052f7e28eea48c7a2a3af7febb0e43e1b2b3318320ed1d2a8f90f5775443f42b18b3c8a3020c8bfb3d9c11e98fa8796a8eadbebd654224004d32aca8b
 Homepage: https://github.com/nktrabajo/Pic-Photo-Viewer
 Description: photo viewer that opens over the desktop, Picasa style
  PicPhotoViewer shows a photo over a translucent layer on top of the desktop,
