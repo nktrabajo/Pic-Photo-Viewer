@@ -92,8 +92,10 @@ git -c user.name="$(git -C "$RAIZ" config user.name)" -c user.email="$(git -C "$
   commit -q -m "Repositorio APT: picphotoviewer $VERSION"
 git push -q origin gh-pages
 # GitHub Pages desde gh-pages (solo la primera vez)
+# (el POST responde 409 si ya estaba: GitHub lo activa solo al crear gh-pages —visto
+# 2026-11-08—, por eso no se corta el script)
 if ! gh api "repos/nktrabajo/Pic-Photo-Viewer/pages" >/dev/null 2>&1; then
-  gh api -X POST "repos/nktrabajo/Pic-Photo-Viewer/pages" -f 'source[branch]=gh-pages' -f 'source[path]=/' >/dev/null
-  echo "GitHub Pages activado sobre gh-pages."
+  gh api -X POST "repos/nktrabajo/Pic-Photo-Viewer/pages" -f 'source[branch]=gh-pages' -f 'source[path]=/' >/dev/null 2>&1 \
+    && echo "GitHub Pages activado sobre gh-pages." || echo "GitHub Pages ya estaba activado."
 fi
 echo "Repositorio APT actualizado con $VERSION: https://nktrabajo.github.io/Pic-Photo-Viewer/"
