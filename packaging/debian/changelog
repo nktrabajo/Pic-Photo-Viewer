@@ -1,3 +1,18 @@
+picphotoviewer (0.2.0) unstable; urgency=low
+
+  * English user interface. The language follows the system (Spanish when
+    the locale is Spanish, English otherwise); `idioma = en|es` in
+    ~/.config/picphotoviewer/config.ini overrides it.
+  * Signed APT repository at https://nktrabajo.github.io/Pic-Photo-Viewer/
+    The package ships its definition, so new versions arrive with
+    `sudo apt upgrade`.
+  * New original icon (the viewer with a penguin in the photo).
+  * README in English with screenshots; Spanish version in README.es.md.
+  * Interfaz en inglés y español según el idioma del sistema, repositorio
+    APT firmado e ícono nuevo.
+
+ -- Neils Karlson <nktrabajo@gmail.com>  Sun, 08 Nov 2026 21:00:00 -0600
+
 picphotoviewer (0.1.3) unstable; urgency=low
 
   * Asociar las imágenes a PicPhotoViewer: instalar.sh lo pregunta al

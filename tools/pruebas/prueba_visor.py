@@ -3,8 +3,21 @@
 miniaturas, presentación, papelera y cerrar con clic fuera de la foto.
 
     python3 -I tools/pruebas/prueba_visor.py
+
+Sin argumentos se corre dos veces, en español y en inglés (PPV_IDIOMA), cada
+una en su propio proceso (el idioma se decide una vez por proceso).
 """
-import sys, os, tempfile, shutil
+import sys, os, tempfile, shutil, subprocess
+if len(sys.argv) == 1:
+    total = 0
+    for lang in ("es", "en"):
+        print(f"--- idioma {lang}", flush=True)
+        r = subprocess.run([sys.executable, "-I", os.path.abspath(__file__), lang],
+                           env=dict(os.environ, PPV_IDIOMA=lang))
+        total |= r.returncode
+    print("TODO OK" if total == 0 else "HAY FALLAS")
+    sys.exit(1 if total else 0)
+IDIOMA = sys.argv[1]
 RAIZ = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(RAIZ, "src"))
 S = tempfile.mkdtemp(prefix="ppv-visor-")
@@ -37,6 +50,19 @@ def boton(i):
 import time; t0=time.time()
 while v.img is None and time.time()-t0<5: QTest.qWait(20)
 ok("carga", v.img is not None and v.indice==2)
+# idioma: los textos visibles salen en el elegido y caben
+from core import idioma
+from PySide6.QtGui import QFont, QFontMetrics
+ok(f"idioma {IDIOMA}", idioma.actual() == IDIOMA)
+esperado = {"es": ("Abrir con editor", "Abrir carpeta"), "en": ("Open in editor", "Show in folder")}[IDIOMA]
+ok("textos de la barra", (v._por_id["editor"].texto, v._por_id["carpeta"].texto) == esperado)
+v._ubicar_botones()
+f = QFont(v.font()); f.setPixelSize(12); fm = QFontMetrics(f)
+ok("el texto cabe en su botón", all(fm.horizontalAdvance(v._por_id[i].texto) + 12 <= v._por_id[i].rect.width()
+                                    for i in ("editor", "carpeta")))
+barra = [v._por_id[i].rect for i in ("zoom_mas", "zoom_menos", "zoom_1", "editor", "anterior", "play",
+                                     "siguiente", "carpeta", "rot_izq", "rot_der", "estrella", "menu")]
+ok("botones sin encimarse", all(a.right() <= b.left() + 0.01 for a, b in zip(barra, barra[1:])))
 boton("siguiente"); esperar(); ok("siguiente", os.path.basename(v.ruta)=="4.jpg")
 QTest.keyClick(v, Qt.Key.Key_Left); esperar(); ok("flecha izq", os.path.basename(v.ruta)=="3.jpg")
 QTest.keyClick(v, Qt.Key.Key_End); esperar(); ok("fin", v.indice==len(v.lista)-1)

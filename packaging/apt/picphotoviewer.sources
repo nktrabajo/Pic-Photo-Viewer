@@ -1,0 +1,5 @@
+Types: deb
+URIs: https://nktrabajo.github.io/Pic-Photo-Viewer/
+Suites: stable
+Components: main
+Signed-By: /usr/share/keyrings/picphotoviewer-archive-keyring.gpg

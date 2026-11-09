@@ -11,6 +11,8 @@ import re
 import subprocess
 from urllib.parse import quote, unquote, urlparse
 
+from core.idioma import tr
+
 ESQUEMA = "org.gnome.desktop.background"
 
 # modo de PicPhotoViewer <-> picture-options de GNOME
@@ -23,7 +25,7 @@ GNOME_A_MODO["spanned"] = "estirar"
 def _gsettings(*args):
     r = subprocess.run(["gsettings", *args], capture_output=True, text=True, timeout=10)
     if r.returncode != 0:
-        raise RuntimeError(r.stderr.strip() or f"gsettings {' '.join(args)} falló")
+        raise RuntimeError(r.stderr.strip() or tr("gsettings {args} falló", args=" ".join(args)))
     return r.stdout.strip()
 
 

@@ -1,6 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=PicPhotoViewer
+Name[es]=PicPhotoViewer
 GenericName=Image Viewer
 GenericName[es]=Visor de imágenes
 Comment=View photos over your desktop, Picasa style
@@ -9,6 +10,7 @@ Exec=picphotoviewer %f
 Icon=picphotoviewer
 Terminal=false
 Categories=Graphics;Viewer;Photography;
-Keywords=photo;picture;image;viewer;wallpaper;foto;imagen;visor;fondo;
+Keywords=photo;picture;image;viewer;wallpaper;
+Keywords[es]=foto;imagen;visor;fondo;fondo de pantalla;photo;picture;image;viewer;wallpaper;
 MimeType=image/jpeg;image/png;image/gif;image/bmp;image/webp;image/tiff;image/heic;image/heif;image/avif;image/jxl;image/x-icon;image/svg+xml;image/x-tga;image/vnd.adobe.photoshop;image/x-xcf;image/x-portable-pixmap;image/x-portable-graymap;image/x-portable-bitmap;
 StartupNotify=false

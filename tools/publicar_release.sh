@@ -8,6 +8,9 @@
 # consultan  https://api.github.com/repos/nktrabajo/Pic-Photo-Viewer/releases/latest
 # una vez al día y, si el tag es mayor que su versión, preguntan si actualizar.
 #
+# Además actualiza el repositorio APT firmado de GitHub Pages
+# (tools/publicar_apt.sh): los equipos reciben la versión con `apt upgrade`.
+#
 # Contrato que el visor espera (src/actualizar/github.py):
 #   tag  vX.Y.Z   (no draft, no prerelease)
 #   adjuntos  picphotoviewer_X.Y.Z_all.deb  +  picphotoviewer_X.Y.Z_all.deb.sha256
@@ -34,6 +37,11 @@ python3 -I tools/pruebas/prueba_visor.py >/dev/null
 echo "Paquete…"
 ./tools/construir_deb.sh >/dev/null
 (cd dist && sha256sum -c "$(basename "$DEB").sha256")
+
+# primero el repositorio APT: el .deb trae su .sources, así que tiene que existir
+# antes de que alguien instale esta versión
+echo "Repositorio APT…"
+./tools/publicar_apt.sh
 
 NOTAS="$(awk -v v="$VERSION" '$0 ~ "^picphotoviewer \\("v"\\)" {f=1; next} /^ -- / {if (f) exit} f' packaging/debian/changelog | sed 's/^  //')"
 git tag -a "$TAG" -m "PicPhotoViewer $VERSION"

@@ -18,6 +18,7 @@ import time
 import urllib.request
 
 from core import config
+from core.idioma import tr
 from core.logger import get_logger
 
 log = get_logger()
@@ -91,7 +92,7 @@ def descargar_y_verificar(info, progreso=None):
     os.makedirs(config.DIR_CACHE, exist_ok=True)
     esperado = _get(info["sha256"]).decode().split()[0].lower()
     if not re.fullmatch(r"[0-9a-f]{64}", esperado):
-        raise RuntimeError("El .sha256 de la release no tiene un hash válido")
+        raise RuntimeError(tr("El .sha256 de la release no tiene un hash válido"))
     destino = os.path.join(config.DIR_CACHE, f"picphotoviewer_{info['version']}_all.deb")
     h = hashlib.sha256()
     req = urllib.request.Request(info["deb"], headers={"User-Agent": AGENTE})
@@ -109,7 +110,7 @@ def descargar_y_verificar(info, progreso=None):
                 progreso(leido * 100 // total)
     if h.hexdigest() != esperado:
         os.remove(destino + ".part")
-        raise RuntimeError("El SHA256 del .deb no coincide con el publicado: no se instala")
+        raise RuntimeError(tr("El SHA256 del .deb no coincide con el publicado: no se instala"))
     os.replace(destino + ".part", destino)
     return destino
 
@@ -119,7 +120,7 @@ def instalar(ruta_deb):
     if r.returncode in (126, 127):
         raise RuntimeError("cancelado")
     if r.returncode != 0:
-        raise RuntimeError(r.stderr.strip() or "la instalación falló")
+        raise RuntimeError(r.stderr.strip() or tr("la instalación falló"))
     log.info("Actualización instalada", {"deb": ruta_deb})
     try:
         os.remove(ruta_deb)

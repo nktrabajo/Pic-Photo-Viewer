@@ -17,10 +17,9 @@ anota lo propio de PicPhotoViewer.
 
 ## 🔧 EN QUÉ SEGUIR (lista viva, en orden de prioridad)
 
-1. [ ] **Probarlo de verdad en el escritorio** (lo hace el usuario): instalar el `.deb`,
-       abrir fotos, poner fondo en 1, 2 y 4 pantallas, fondo de GDM y cerrar sesión. Nada de
-       eso se pudo ver en una pantalla real (ver «Lo que NO se pudo verificar»).
-       `./tools/construir_deb.sh && cp dist/picphotoviewer_0.1.0_all.deb /tmp/ && sudo apt install /tmp/picphotoviewer_0.1.0_all.deb && nautilus -q`
+1. [x] ~~**Probarlo de verdad en el escritorio**~~ — el usuario lo probó en su escritorio
+       (2026-11-08): «funciona bien». Para probar un `.deb` de dev:
+       `./tools/construir_deb.sh && cp dist/picphotoviewer_*_all.deb /tmp/ && sudo apt install /tmp/picphotoviewer_*_all.deb && nautilus -q`
        **Instalar SIEMPRE desde una copia local**: dentro del montaje SSHFS, root no puede
        leer (montado sin `allow_other`) y apt 3.0 responde un engañoso «Unsupported file
        … given on commandline» (visto 2026-11-08).
@@ -32,7 +31,15 @@ anota lo propio de PicPhotoViewer.
        instalado y con sesión de `nktrabajo` en esta máquina.
 3. [x] ~~**v0.1.3** (asociación de imágenes, 3.9)~~ — publicada 2026-11-08 con el visto
        bueno del usuario.
-4. [ ] Lo de «Qué le falta al proyecto», por prioridad del usuario.
+4. [x] ~~**v0.2.0**: ícono propio, interfaz en inglés, README en inglés con capturas,
+       repositorio APT~~ (3.8, 3.10, 3.11) — pedido 2026-11-08 para promocionar la app.
+5. [ ] **Promoción** (lo hace el usuario; plan conversado 2026-11-08): subir
+       `assets/vista-previa-social.png` en Settings → Social preview (cambió con el ícono
+       nuevo); alta en AlternativeTo como alternativa a Picasa Photo Viewer; post con el GIF
+       en r/linux, r/debian, r/gnome; escribir a It's FOSS / OMG! Ubuntu / Linuxiac.
+       Antes de anunciar en Ubuntu, probarlo en una VM (¿trae PySide6 en sus repos?).
+6. [ ] **Respaldar la clave de firma del repositorio APT** (3.11) fuera de esta máquina.
+7. [ ] Lo de «Qué le falta al proyecto», por prioridad del usuario.
 
 **Parados a propósito, no arrancar sin retomarlos con el usuario**: —
 
@@ -180,23 +187,22 @@ lee UTF-8 o latin-1 (Picasa en Windows escribía ANSI).
 - Menú ▼ → «Buscar actualizaciones» fuerza la consulta; «No avisar de esta versión» la
   silencia hasta la siguiente.
 
-### 3.8 Ícono de la aplicación (2026-11-08, pedido del usuario — v0.1.2)
+### 3.8 Ícono de la aplicación (v0.1.2 → propio desde la v0.2.0, 2026-11-08)
 
-El usuario aportó `icon.png` (movido a `assets/icono-original.png`): 1263×1246, no
-cuadrado, con **21.984 píxeles sueltos semitransparentes** (alfa hasta 185) alrededor del
-círculo, restos del recorte del fondo. `tools/preparar_icono.py` borra todo lo que cae fuera
-de la elipse del logo (borde suavizado de 1,5 px), lo centra en un cuadrado con 3 % de
-margen y guarda `assets/picphotoviewer.png` (1024×1024). `construir_deb.sh` genera de ahí
-un PNG por tamaño del tema hicolor (16, 22, 24, 32, 48, 64, 96, 128, 256, 512); el SVG
-provisional se eliminó (dpkg lo borra al actualizar). Revisado a ojo sobre fondo claro y
-oscuro: bordes limpios; a 16 px el pingüino casi no se distingue.
+**v0.1.2–0.1.3**: el usuario aportó un `icon.png` casi idéntico al logo de Picasa (marca de
+Google); se le avisó y lo usó igual. **v0.2.0**: para promocionar la app pidió un ícono
+propio; se le mostraron 3 propuestas (fotos apiladas / el propio visor / lente con
+estrella) y eligió **«el propio visor» con el pingüino de Linux dentro del paisaje**.
 
-Descripción y 14 temas del repo puestos con `gh repo edit` (2026-11-08). En GitHub: el ícono encabeza el `README.md` (160 px). `assets/vista-previa-social.png`
-(1280×640) es para la «Social preview» del repo, que **no se puede subir por la API**: la
-sube el usuario en Settings → General → Social preview.
+`tools/dibujar_icono.py` lo dibuja con PIL a 4x (sin recursos externos) y escribe
+`assets/picphotoviewer.png` (1024×1024) y `assets/vista-previa-social.png` (1280×640).
+`construir_deb.sh` genera de ahí un PNG por tamaño del tema hicolor (16…512). El pingüino
+está dibujado con formas propias «al estilo de Tux», no es el dibujo de Larry Ewing. Se
+borraron `assets/icono-original.png` y `tools/preparar_icono.py` (quedan en la historia).
+A 16 px se lee como «foto con tira»; el pingüino se distingue desde 32 px.
 
-**Aviso dado al usuario**: el círculo de aspas multicolor es casi idéntico al logo de
-Picasa (marca de Google). Lo decidió usar igual; no se «corrige» sin preguntarle.
+Descripción y 14 temas del repo puestos con `gh repo edit` (2026-11-08). La «Social
+preview» **no se puede subir por la API**: la sube el usuario en Settings → General.
 
 ### 3.9 Asociar las imágenes al visor (2026-11-08, pedido del usuario — v0.1.3)
 
@@ -214,6 +220,82 @@ no puede hacerla. Por eso, en dos lugares:
 Nautilus. **Bug encontrado al medir** (9.d): si `~/.config` no existe, `xdg-mime` falla a
 medias.
 
+### 3.10 Idiomas (2026-11-08, pedido del usuario)
+
+Interfaz en **español e inglés**, según el idioma del sistema. **Sin Qt Linguist ni
+gettext/.mo** (decidido con el usuario): nada que compilar.
+
+- `src/core/idioma.py`: `tr(texto_es, **campos)`. El texto fuente es el **español tal
+  cual** en el código; el diccionario `EN` da el inglés (146 entradas). Variables con
+  `{campo}` y `.format()` **después** de traducir — nunca f-strings dentro de `tr()`. Los
+  textos definidos a nivel de módulo (atajos de F1, nombres EXIF, modos de ajuste) se marcan
+  con `N("…")` y se traducen al usarlos con `tr(variable)`.
+- Qué idioma: config `idioma` = `auto` (default) | `es` | `en` (también `PPV_IDIOMA`). En
+  `auto`: `LANGUAGE` (su primer elemento), `LC_ALL`, `LC_MESSAGES`, `LANG`; la primera con
+  valor decide: «es…» → español, cualquier otra → inglés. Se decide una vez por proceso.
+- Sin traducción, o con una traducción que rompe el `.format()`, se muestra el español:
+  **nunca rompe**.
+- **Los logs NO se traducen** (quedan en español a propósito). Ojo: el texto de una
+  excepción que se muestra al usuario sí se traduce, así que el contexto `error` de algunas
+  líneas de log puede salir en inglés.
+- Los botones estándar de Qt («Close», «OK», el diálogo de imprimir) se traducen cargando
+  `qtbase_es.qm` de `qt6-translations-l10n` si está instalado (`main._traducir_qt`); si
+  no, quedan en inglés.
+- Las píldoras con texto de la barra («Abrir con editor», «Abrir carpeta») y las columnas
+  de la ayuda F1 **se miden** con el texto real: el ancho de antes es el mínimo.
+- `packaging/nautilus/…`: corre dentro de Nautilus con otro `sys.path` → **no importa
+  `core`**; tiene su propio `EN` de 3 textos y repite la regla (lee `config.ini` a mano).
+- `.desktop`: inglés por defecto + `[es]` (Name, GenericName, Comment, Keywords).
+- No se traducen: los nombres de las opciones de línea de comandos (`--fondo`…, son
+  interfaz estable), los textos internos de `argparse` («usage:», «show this help…», de
+  Python), los mensajes del ayudante root `picphotoviewer-gdm` (llegan como stderr) y
+  los errores de Qt al leer una imagen (`QImageReader.errorString`, en inglés).
+- **Probado** (`prueba_todo.py`, bloque «idiomas»): escaneo estático con `ast` de `src/` y
+  del plugin — cada `tr("…")`/`N("…")` tiene entrada en su `EN`, mismos `{campos}` en los
+  dos idiomas, los kwargs de `tr()` coinciden con los campos, ningún f-string, y `EN` sin
+  entradas huérfanas; la elección con 13 combinaciones de entorno + config + `PPV_IDIOMA`;
+  el fallback; el plugin cargado con un `gi` falso en los dos idiomas; `desktop-file-validate`.
+  `prueba_visor.py` corre entero dos veces (es y en).
+
+### 3.11 Repositorio APT en GitHub Pages (2026-11-08, pedido del usuario — v0.2.0)
+
+Muchos usuarios de Debian desconfían de `curl | bash`; con un repositorio, las versiones
+llegan con `apt upgrade`. `tools/publicar_apt.sh` (lo llama `publicar_release.sh` ANTES
+de crear la release) clona la rama **`gh-pages`**, copia el `.deb` a
+`pool/main/p/picphotoviewer/` (conserva las 3 últimas versiones), genera `Packages` con
+`apt-ftparchive` y `Release`, y firma `InRelease` + `Release.gpg`. Se sirve en
+`https://nktrabajo.github.io/Pic-Photo-Viewer/` (Pages activado por la API la 1ª vez).
+
+- **Suite `stable`, componente `main`.** El paquete es `all`, pero apt pide
+  `binary-<arquitectura>`: el mismo `Packages` va en `binary-{all,amd64,arm64,armhf,i386}`
+  (sin eso cada `apt update` avisa).
+- **El `.deb` trae el repositorio** (como Chrome o VS Code):
+  `/etc/apt/sources.list.d/picphotoviewer.sources` (conffile, deb822 con `Signed-By`) y
+  `/usr/share/keyrings/picphotoviewer-archive-keyring.gpg`. Así quien instaló el `.deb` a
+  mano o con `instalar.sh` también actualiza por apt; `apt purge` se lleva las dos cosas.
+  Lintian da **error `package-installs-apt-sources`**: es regla del archivo oficial de
+  Debian, no aplica a un repo de terceros. Aceptado.
+- **Clave de firma**: ed25519 sin contraseña (para firmar sin intervención), huella
+  `633EF5A6FC400D9514F8C6E1D1B8273177CD5791`, en
+  `~/.local/share/picphotoviewer-apt-firma/` (GNUPGHOME propio, FUERA del repo; el
+  certificado de revocación está en `openpgp-revocs.d/`). La pública va en
+  `packaging/apt/`. **Si se pierde**, los equipos dejan de recibir actualizaciones por apt
+  hasta reinstalar un `.deb` con la clave nueva → respaldarla (EN QUÉ SEGUIR 6).
+- **Probado** (2026-11-08) con apt aislado (`APT_CONFIG` propio, sin root) contra el sitio
+  servido en local: `apt-get update` lo valida con `sqv`, `apt-cache policy` ve la versión
+  y `apt-get download` la baja; con el `InRelease` manipulado, apt lo rechaza («Message has
+  been manipulated … is not signed»).
+
+### 3.12 README en inglés y capturas (2026-11-08, v0.2.0)
+
+`README.md` en inglés (público principal) y `README.es.md` en español, enlazados entre sí.
+Capturas en `assets/capturas/` (visor, ayuda, diagrama de 4 pantallas, `demo.gif` ~3 MB),
+generadas sin pantalla con `tools/capturas_readme.py FOTOS FONDO SALIDA [en|es]`: compone
+el visor sobre un escritorio falso (fondo Adwaita de GNOME + barra superior dibujada) con
+HOME temporal. Las fotos son de Unsplash vía `picsum.photos/id/<n>/1600/1067` (licencia
+Unsplash, sin atribución obligatoria; igual se acredita) y NO están en el repo: ids usados
+1015 1016 1018 1019 1022 1036 1039 1043 1044 1050 110 129 15 28 29 49.
+
 ### 3.7 Logs (2026-11-08)
 
 `~/Logs/PicPhotoViewer-<fecha>.txt` como el estándar, pero solo se registran **acciones**
@@ -224,12 +306,12 @@ archivo. Como un visor se abre muchas veces al día, se conservan los últimos 5
 
 ```
 VERSION                         versión del paquete (semver)
-README.md                       el del repo público
+README.md / README.es.md        el del repo público, en inglés / en español
 LICENSE                         MIT
 instalar.sh                     instalador de una línea desde la última release
 desinstalar.sh                  apt purge + rescata el fondo actual + pregunta por los datos
 src/main.py                     entrada: visor, --fondo, --fondo-gdm, --restaurar-gdm, --version
-src/core/                       logger (estándar) y config (XDG, no .env)
+src/core/                       logger (estándar), config (XDG, no .env) e idioma (es/en, 3.10)
 src/visor/ventana.py            la ventana estilo Picasa (≈900 líneas)
 src/visor/dibujo.py             botones e íconos pintados
 src/visor/cargador.py           imágenes y miniaturas en hilos, caché LRU
@@ -249,19 +331,22 @@ packaging/debian/               control.in, postinst, prerm, postrm, triggers, c
 packaging/polkit/               acciones de pkexec
 packaging/nautilus/             extensión del menú contextual
 packaging/picphotoviewer.desktop
-assets/icono-original.png      ícono aportado por el usuario (2026-11-08), tal cual
-assets/picphotoviewer.png       el mismo, limpio y cuadrado 1024×1024 (tools/preparar_icono.py)
+assets/picphotoviewer.png       ícono 1024×1024 (tools/dibujar_icono.py)
+assets/capturas/                capturas y GIF del README (tools/capturas_readme.py)
 assets/vista-previa-social.png  1280×640 para la vista previa social de GitHub
 tools/construir_deb.sh          arma dist/*.deb + .sha256
 tools/publicar_release.sh       tag + push + gh release (LO CORRE EL USUARIO)
 tools/check_system.sh           diagnóstico solo lectura
-tools/preparar_icono.py         original → picphotoviewer.png (borra el halo del recorte)
-tools/pruebas/                  prueba_todo.py (64) y prueba_visor.py (20)
+tools/dibujar_icono.py          dibuja el ícono y la vista previa social
+tools/capturas_readme.py        capturas del README sin pantalla
+tools/publicar_apt.sh           repositorio APT firmado en gh-pages (3.11)
+packaging/apt/                  .sources, clave pública e index.html del repositorio APT
+tools/pruebas/                  prueba_todo.py (109) y prueba_visor.py (24 × 2 idiomas)
 ```
 
 ## Cómo se verificó (2026-11-08)
 
-- **`tools/pruebas/prueba_todo.py` — 64 comprobaciones, 0 fallas** (53 en la v0.1.0; +11 de la asociación en la v0.1.3) (2,4 s): orden y
+- **`tools/pruebas/prueba_todo.py` — 109 comprobaciones, 0 fallas** (53 en la v0.1.0; +11 de la asociación en la v0.1.3; +45 de idiomas, 3.10): orden y
   formatos; `.picasa.ini` (conserva claves de Picasa, borra secciones vacías, sin permiso
   falla); composición píxel por píxel con **la disposición real de los 4 monitores de dev**
   (rellenar, ajustar, centrar, extendida sobre 2 pantallas); `aplicar()` con gsettings falso
@@ -271,21 +356,32 @@ tools/pruebas/                  prueba_todo.py (64) y prueba_visor.py (20)
   una **copia** del tema real: los 8 recursos, CSS con el bloque y el resto byte a byte
   igual, reaplicar no duplica, trigger tras «actualizar gnome-shell», rechaza no-JPEG,
   restaurar deja el archivo **idéntico al de fábrica** (`cmp`).
-- **`tools/pruebas/prueba_visor.py` — 20 comprobaciones, 0 fallas, 3 corridas seguidas**:
+- **`tools/pruebas/prueba_visor.py` — 24 comprobaciones × 2 idiomas (es y en), 0 fallas**:
   clics en botones, teclado, arrastre, zoom (no aleja más allá de ajustada), estrella,
-  clic en miniatura, presentación y Esc, Supr a la papelera, ayuda, clic fuera cierra.
+  clic en miniatura, presentación y Esc, Supr a la papelera, ayuda, clic fuera cierra; y
+  por idioma: el elegido, los textos de la barra, que el texto quepa en su botón y que los
+  botones no se encimen.
 - **Vistas fallar a propósito** (en una copia del código): rellenar↔ajustar (2 fallas), no
   borrar sección vacía (1), no verificar SHA (1), GDM sin bloque CSS (5), no copiar
   «previo» (2 — antes no se detectaba y se agregó el caso que esconde la foto original),
-  clic fuera no cierra + zoom sin límite (2).
+  clic fuera no cierra + zoom sin límite (2); idiomas (3.10): quitar una entrada de `EN`
+  (2), `{campo}` distinto en la traducción (antes rompía con KeyError → se agregó el
+  fallback), f-string dentro de `tr()` (2), texto del plugin sin traducir (3), regla de
+  `LANGUAGE` mal (1).
 - **Capturas offscreen** del visor (normal, 200 %, ayuda) sobre un escritorio falso, y del
   diagrama de pantallas con los 4 monitores de dev (normal y extendida): se ven como la
-  captura de referencia.
+  captura de referencia. Idiomas (3.10): visor, barra, ayuda F1, menú ▼, diagrama de
+  pantallas, Propiedades, «visor predeterminado» y Acerca de, en inglés y en español:
+  nada se corta.
 - **`.deb`**: `lintian` limpio salvo `no-manual-page`; `desktop-file-validate` OK; la
   extensión de Nautilus cargada con el `gi` real (`Nautilus 4.0`) devuelve los 3 ítems con
   1 imagen y ninguno con 2; el paquete extraído arranca (`--version` → 0.1.0).
 
 **Lo que NO se pudo verificar**, y queda para el usuario:
+
+> **2026-11-08**: el usuario lo instaló desde GitHub, lo probó en su escritorio y dijo que
+> «funciona bien» (sin detalle de qué partes). La lista de abajo es lo que Claude no pudo
+> ver; no se volvió a revisar punto por punto.
 
 - **Nada se vio en una pantalla real**: translucidez sobre el escritorio con mutter,
   pantalla completa en el monitor del puntero, animaciones, menú ▼, impresión.
@@ -312,8 +408,9 @@ python3 -I tools/pruebas/prueba_todo.py && python3 -I tools/pruebas/prueba_visor
 
 1. Subir `VERSION` y agregar la entrada en `packaging/debian/changelog`.
 2. Commit.
-3. `./tools/publicar_release.sh` (**el usuario**): corre las pruebas, arma el `.deb`, crea el
-   tag, hace push y la release con los 2 adjuntos.
+3. `./tools/publicar_release.sh` (el usuario, o Claude con su visto bueno explícito): corre
+   las pruebas, arma el `.deb`, actualiza el repositorio APT (`publicar_apt.sh`, necesita la
+   clave de 3.11), crea el tag, hace push y la release con los 2 adjuntos.
 
 Qué NO viaja en el `.deb`: `CLAUDE.md`, `ESTANDAR-ITCorp.md`, `doc/`, `tools/`, `README.md`
 (el paquete copia solo lo que nombra `construir_deb.sh`). En el **repo público** está todo
@@ -339,8 +436,9 @@ Probado en seco con HOME, gsettings y dpkg falsos.
 1. [x] 2026-11-08 — Proyecto creado con `nuevo-proyecto.sh`; quitados `sql/` y `satellite/`.
 2. [x] 2026-11-08 — Visor completo, fondos por pantalla, GDM, Nautilus, actualizador,
        `.deb`, pruebas.
-3. [ ] Prueba real en el escritorio del usuario (EN QUÉ SEGUIR 1).
-4. [ ] Resolver D1 y D2; primer push y release v0.1.0.
+3. [x] 2026-11-08 — Prueba real en el escritorio del usuario: funciona bien.
+4. [x] 2026-11-08 — D1 y D2 resueltos; releases v0.1.0 a v0.1.3.
+5. [x] 2026-11-08 — v0.2.0: ícono propio, inglés, README con capturas, repositorio APT.
 
 ## Bugs encontrados y corregidos
 
@@ -388,7 +486,6 @@ no la foto. Se revirtió el cambio en `acciones.py` y se creó el `HOME` en la p
   se rearma al aplicar el siguiente.
 - Fondo XML de GNOME (los que cambian con la hora): al componer se toma su primera imagen.
 - Página de manual (`lintian: no-manual-page`).
-- Interfaz solo en español.
 - Wayland sin probar (la translucidez y `screenAt` pueden comportarse distinto).
 
 ## Seguridad

@@ -22,6 +22,7 @@ from PySide6.QtCore import QRect
 from PySide6.QtGui import QImage
 
 from core import config
+from core.idioma import tr
 from core.logger import get_logger
 from fondos import componer as comp
 from fondos import gnome
@@ -88,10 +89,10 @@ def aplicar(ruta, seleccion, modo="rellenar", extendida=False, pantallas=None, l
     if pantallas is None:
         pantallas, lienzo = comp.pantallas_actuales()
     if not pantallas:
-        raise RuntimeError("No se detectó ninguna pantalla")
+        raise RuntimeError(tr("No se detectó ninguna pantalla"))
     seleccion = [p.nombre for p in pantallas if p.nombre in set(seleccion)]
     if not seleccion:
-        raise ValueError("No se eligió ninguna pantalla")
+        raise ValueError(tr("No se eligió ninguna pantalla"))
 
     copia = _copiar_original(ruta)
     estado = leer_estado()
@@ -156,7 +157,7 @@ def aplicar(ruta, seleccion, modo="rellenar", extendida=False, pantallas=None, l
     # nombre nuevo cada vez: con el mismo nombre GNOME no recarga la imagen
     destino = os.path.join(DIR_FONDOS, f"compuesto-{time.strftime('%Y%m%d-%H%M%S')}-{time.time_ns() % 10**9:09d}.jpg")
     if not imagen.save(destino, "JPG", 95):
-        raise RuntimeError(f"No se pudo guardar {destino}")
+        raise RuntimeError(tr("No se pudo guardar {destino}", destino=destino))
     gnome.aplicar(destino, "spanned")
 
     vigentes = {p.nombre for p in pantallas}

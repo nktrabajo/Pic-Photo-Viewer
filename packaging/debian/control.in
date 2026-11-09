@@ -6,7 +6,7 @@ Priority: optional
 Maintainer: Neils Karlson <nktrabajo@gmail.com>
 Installed-Size: @SIZE@
 Depends: python3 (>= 3.11), python3-pyside6.qtcore, python3-pyside6.qtgui, python3-pyside6.qtwidgets, python3-pyside6.qtprintsupport, python3-pil, exiftran, libglib2.0-bin, pkexec, xdg-utils
-Recommends: qt6-image-formats-plugins, python3-nautilus, libnotify-bin, xclip
+Recommends: qt6-image-formats-plugins, qt6-translations-l10n, python3-nautilus, libnotify-bin, xclip
 Homepage: https://github.com/nktrabajo/Pic-Photo-Viewer
 Description: photo viewer that opens over the desktop, Picasa style
  PicPhotoViewer shows a photo over a translucent layer on top of the desktop,

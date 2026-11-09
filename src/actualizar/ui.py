@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QMessageBox, QProgressDialog
 
 from actualizar import github
 from core import config
+from core.idioma import tr
 
 
 class _Hilo(QThread):
@@ -41,19 +42,21 @@ class Buscador(QObject):
         tipo, info = res
         if tipo == "error" or info is None:
             if self.manual:
-                QMessageBox.information(self.ventana, "Actualizaciones",
-                                        f"Tienes la versión más reciente ({config.version()}).")
+                QMessageBox.information(self.ventana, tr("Actualizaciones"),
+                                        tr("Tienes la versión más reciente ({version}).",
+                                           version=config.version()))
             return
         caja = QMessageBox(self.ventana)
-        caja.setWindowTitle("Actualización disponible")
+        caja.setWindowTitle(tr("Actualización disponible"))
         caja.setIcon(QMessageBox.Icon.Information)
-        caja.setText(f"<b>Hay una versión nueva de PicPhotoViewer: {info['version']}</b><br>"
-                     f"Tienes la {config.version()}. ¿Deseas actualizar?")
+        caja.setText(tr("<b>Hay una versión nueva de PicPhotoViewer: {nueva}</b><br>"
+                        "Tienes la {version}. ¿Deseas actualizar?",
+                        nueva=info["version"], version=config.version()))
         if info["notas"]:
             caja.setDetailedText(info["notas"])
-        b_si = caja.addButton("Actualizar", QMessageBox.ButtonRole.AcceptRole)
-        caja.addButton("Ahora no", QMessageBox.ButtonRole.RejectRole)
-        b_nunca = caja.addButton("No avisar de esta versión", QMessageBox.ButtonRole.DestructiveRole)
+        b_si = caja.addButton(tr("Actualizar"), QMessageBox.ButtonRole.AcceptRole)
+        caja.addButton(tr("Ahora no"), QMessageBox.ButtonRole.RejectRole)
+        b_nunca = caja.addButton(tr("No avisar de esta versión"), QMessageBox.ButtonRole.DestructiveRole)
         caja.exec()
         if caja.clickedButton() is b_nunca:
             config.set("version_ignorada", info["version"])
@@ -61,7 +64,7 @@ class Buscador(QObject):
             self._descargar(info)
 
     def _descargar(self, info):
-        prog = QProgressDialog("Descargando la actualización…", None, 0, 100, self.ventana)
+        prog = QProgressDialog(tr("Descargando la actualización…"), None, 0, 100, self.ventana)
         prog.setWindowTitle("PicPhotoViewer")
         prog.setMinimumDuration(0)
         prog.setValue(0)
@@ -72,16 +75,17 @@ class Buscador(QObject):
             prog.close()
             tipo, dato = res
             if tipo == "error":
-                QMessageBox.warning(self.ventana, "Actualización", f"No se pudo descargar:\n{dato}")
+                QMessageBox.warning(self.ventana, tr("Actualización"), tr("No se pudo descargar:\n{error}", error=dato))
                 return
             try:
                 github.instalar(dato)
             except RuntimeError as e:
                 if str(e) != "cancelado":
-                    QMessageBox.warning(self.ventana, "Actualización", f"No se pudo instalar:\n{e}")
+                    QMessageBox.warning(self.ventana, tr("Actualización"), tr("No se pudo instalar:\n{error}", error=e))
                 return
-            QMessageBox.information(self.ventana, "Actualización",
-                                    f"PicPhotoViewer {info['version']} quedó instalado.\n"
-                                    "Se usará la próxima vez que abras una foto.")
+            QMessageBox.information(self.ventana, tr("Actualización"),
+                                    tr("PicPhotoViewer {version} quedó instalado.\n"
+                                       "Se usará la próxima vez que abras una foto.",
+                                       version=info["version"]))
         self._hilo.listo.connect(listo)
         self._hilo.start()

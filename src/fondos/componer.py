@@ -8,9 +8,12 @@ from dataclasses import dataclass
 from PySide6.QtCore import QRect, QRectF, Qt
 from PySide6.QtGui import QColor, QImage, QPainter
 
+from core.idioma import N
+
 MODOS = ["rellenar", "ajustar", "centrar", "estirar", "mosaico"]
-NOMBRES_MODO = {"rellenar": "Rellenar", "ajustar": "Ajustar", "centrar": "Centrar",
-                "estirar": "Estirar", "mosaico": "Mosaico"}
+# N(): se traducen al mostrarlos (fondos/dialogo.py)
+NOMBRES_MODO = {"rellenar": N("Rellenar"), "ajustar": N("Ajustar"), "centrar": N("Centrar"),
+                "estirar": N("Estirar"), "mosaico": N("Mosaico")}
 
 
 @dataclass

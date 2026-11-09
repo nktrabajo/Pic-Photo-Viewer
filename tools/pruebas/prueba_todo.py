@@ -9,6 +9,7 @@ tema de GDM es una COPIA dentro de una raíz falsa (PPV_RAIZ).
 Regla de la casa: cada bloque se validó saboteando el código que cubre y
 viendo que falla (ver «Cómo se verificó» en CLAUDE.md).
 """
+import glob
 import hashlib
 import http.server
 import os
@@ -336,6 +337,185 @@ if os.path.isfile(real) and shutil.which("glib-compile-resources"):
     check("restaurar limpia /var/lib", not os.listdir(raiz + "/var/lib/picphotoviewer"))
 else:
     print("  (sin tema de gnome-shell en esta máquina: no se probó)")
+
+# ---------------------------------------------------------------- idiomas (3.10)
+print("idiomas")
+import ast  # noqa: E402
+import string  # noqa: E402
+import types  # noqa: E402
+from core import idioma  # noqa: E402
+
+
+def _campos(texto):
+    return {c for _, c, _, _ in string.Formatter().parse(texto) if c is not None}
+
+
+def escanear(archivos, en, nombre_dic):
+    """Cada tr("literal") / N("literal"): con entrada en `en`, mismos {campos} en
+    los dos idiomas y los kwargs de tr() iguales a los campos. Devuelve los literales."""
+    usados = set()
+    fstring, sin_trad, campos, kwargs = [], [], [], []
+    for ruta in archivos:
+        arbol = ast.parse(open(ruta, encoding="utf-8").read(), ruta)
+        corto = os.path.relpath(ruta, RAIZ_PROY)
+        for nodo in ast.walk(arbol):
+            if not (isinstance(nodo, ast.Call) and isinstance(nodo.func, ast.Name)
+                    and nodo.func.id in ("tr", "N") and nodo.args):
+                continue
+            arg = nodo.args[0]
+            donde = f"{corto}:{nodo.lineno}"
+            if isinstance(arg, ast.JoinedStr):
+                fstring.append(donde)
+                continue
+            if not (isinstance(arg, ast.Constant) and isinstance(arg.value, str)):
+                continue  # tr(variable): el literal se marcó con N() donde se define
+            es = arg.value
+            usados.add(es)
+            if es not in en:
+                sin_trad.append(f"{donde}: {es!r}")
+            elif _campos(es) != _campos(en[es]):
+                campos.append(f"{donde}: {es!r}")
+            kws = {k.arg for k in nodo.keywords if k.arg}
+            if nodo.func.id == "tr" and (kws or _campos(es)) and kws != _campos(es):
+                kwargs.append(f"{donde}: {sorted(kws)} vs {sorted(_campos(es))}")
+    check(f"{nombre_dic}: tr() sin f-strings", not fstring, fstring)
+    check(f"{nombre_dic}: todo texto tiene traducción", not sin_trad, sin_trad)
+    check(f"{nombre_dic}: mismos {{campos}} en es y en", not campos, campos)
+    check(f"{nombre_dic}: kwargs de tr() = {{campos}}", not kwargs, kwargs)
+    return usados
+
+
+fuentes = sorted(glob.glob(os.path.join(RAIZ_PROY, "src", "**", "*.py"), recursive=True))
+usados = escanear([f for f in fuentes if not f.endswith(os.path.join("core", "idioma.py"))],
+                  idioma.EN, "core/idioma.EN")
+check("el escaneo encontró los textos", len(usados) >= 100, len(usados))
+huerfanas = set(idioma.EN) - usados
+check("EN sin entradas que nadie usa", not huerfanas, sorted(huerfanas))
+check("EN sin traducciones vacías", all(v.strip() for v in idioma.EN.values()))
+
+plugin = os.path.join(RAIZ_PROY, "packaging", "nautilus", "picphotoviewer-nautilus.py")
+arbol = ast.parse(open(plugin, encoding="utf-8").read())
+en_plugin = next(ast.literal_eval(n.value) for n in arbol.body
+                 if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == "EN")
+usados_plugin = escanear([plugin], en_plugin, "EN del plugin de Nautilus")
+check("plugin: 3 textos traducibles", len(usados_plugin) == 3, usados_plugin)
+check("plugin: mismas traducciones que la app",
+      all(idioma.EN.get(k, v) == v for k, v in en_plugin.items()), en_plugin)
+
+# elección del idioma
+casos = [
+    ({"LANGUAGE": "es_CR:en", "LANG": "en_US.UTF-8"}, "auto", "es"),
+    ({"LANGUAGE": "en_US:es", "LANG": "es_CR.UTF-8"}, "auto", "en"),
+    ({"LANGUAGE": "", "LC_ALL": "", "LC_MESSAGES": "es_ES.UTF-8", "LANG": "en_US.UTF-8"}, "auto", "es"),
+    ({"LC_ALL": "en_GB.UTF-8", "LC_MESSAGES": "es_ES.UTF-8"}, "auto", "en"),
+    ({"LANG": "es_CR.UTF-8"}, "auto", "es"),
+    ({"LANG": "es"}, "auto", "es"),
+    ({"LANG": "de_DE.UTF-8"}, "auto", "en"),
+    ({"LANG": "C.UTF-8"}, "auto", "en"),
+    ({}, "auto", "en"),
+    ({"LANG": "en_US.UTF-8"}, "es", "es"),
+    ({"LANG": "es_CR.UTF-8"}, "en", "en"),
+    ({"LANG": "es_CR.UTF-8"}, " EN ", "en"),
+    ({"LANG": "es_CR.UTF-8"}, "francés", "es"),  # valor raro = auto
+]
+for entorno, pref, esperado in casos:
+    check(f"idioma {entorno} pref={pref!r}", idioma.detectar(entorno, pref) == esperado,
+          idioma.detectar(entorno, pref))
+check("default de config = auto", config.DEFAULTS["idioma"] == "auto")
+config.set("idioma", "en")
+check("config idioma=en manda sobre LANG", idioma.detectar({"LANG": "es_CR.UTF-8"}) == "en")
+config.set("idioma", "es")
+check("config idioma=es manda sobre LANG", idioma.detectar({"LANG": "en_US.UTF-8"}) == "es")
+os.environ["PPV_IDIOMA"] = "en"
+check("PPV_IDIOMA manda sobre config", idioma.detectar({"LANG": "es_CR.UTF-8"}) == "en")
+del os.environ["PPV_IDIOMA"]
+config.set("idioma", "auto")
+check("config auto: decide el entorno", idioma.detectar({"LANG": "es_CR.UTF-8"}) == "es")
+
+# traducir y fallback
+idioma.fijar("en")
+check("tr en inglés", idioma.tr("Abrir carpeta") == "Show in folder")
+check("tr con campos", idioma.tr("{i} de {n}", i=3, n=12) == "3 of 12")
+check("sin traducción: queda el español", idioma.tr("Texto que no está {x}", x=1) == "Texto que no está 1")
+_viejo = idioma.EN["{i} de {n}"]
+idioma.EN["{i} de {n}"] = "{i} of {total}"  # traducción rota
+check("traducción con campo roto: queda el español", idioma.tr("{i} de {n}", i=3, n=12) == "3 de 12")
+idioma.EN["{i} de {n}"] = _viejo
+check("N() no traduce", idioma.N("Abrir carpeta") == "Abrir carpeta")
+check("textos de módulo se traducen al usarlos", idioma.tr(comp.NOMBRES_MODO["mosaico"]) == "Tile")
+idioma.fijar("es")
+check("tr en español", idioma.tr("Abrir carpeta") == "Abrir carpeta")
+check("tr con campos en español", idioma.tr("{i} de {n}", i=3, n=12) == "3 de 12")
+idioma.fijar(None)
+
+# el plugin de Nautilus con un gi falso
+class _Item:
+    def __init__(self, name, label, icon):
+        self.label = label
+
+    def connect(self, *a):
+        pass
+
+
+nautilus = types.SimpleNamespace(MenuProvider=type("MenuProvider", (), {}), MenuItem=_Item)
+gi_repo = types.ModuleType("gi.repository")
+gi_repo.GObject = types.SimpleNamespace(GObject=type("GObject", (), {}))
+gi_repo.Nautilus = nautilus
+gi_falso = types.ModuleType("gi")
+gi_falso.repository = gi_repo
+_guardados = {k: sys.modules.get(k) for k in ("gi", "gi.repository")}
+sys.modules.update({"gi": gi_falso, "gi.repository": gi_repo})
+try:
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("ppv_nautilus", plugin)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+finally:
+    for k, v in _guardados.items():
+        if v is None:
+            sys.modules.pop(k, None)
+        else:
+            sys.modules[k] = v
+
+
+class _Archivo:
+    def get_uri_scheme(self):
+        return "file"
+
+    def is_directory(self):
+        return False
+
+    def get_mime_type(self):
+        return "image/jpeg"
+
+    def get_location(self):
+        return types.SimpleNamespace(get_path=lambda: "/tmp/x.jpg")
+
+
+def etiquetas(**env):
+    viejo = {k: os.environ.pop(k, None) for k in ("LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG")}
+    os.environ.update(env)
+    try:
+        return [i.label for i in mod.PicPhotoViewerMenu().get_file_items([_Archivo()])]
+    finally:
+        for k in ("LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"):
+            os.environ.pop(k, None)
+        os.environ.update({k: v for k, v in viejo.items() if v is not None})
+
+
+check("plugin en inglés", etiquetas(LANG="en_US.UTF-8")[0] == "Open with PicPhotoViewer")
+check("plugin en español", etiquetas(LANG="es_CR.UTF-8")[0] == "Abrir con PicPhotoViewer")
+check("plugin: LANGUAGE manda", etiquetas(LANGUAGE="es:en", LANG="en_US.UTF-8")[0] == "Abrir con PicPhotoViewer")
+config.set("idioma", "en")
+check("plugin: respeta config.ini", etiquetas(LANG="es_CR.UTF-8")[0] == "Open with PicPhotoViewer")
+config.set("idioma", "auto")
+
+r = subprocess.run(["desktop-file-validate", os.path.join(RAIZ_PROY, "packaging", "picphotoviewer.desktop")],
+                   capture_output=True, text=True) if shutil.which("desktop-file-validate") else None
+if r is not None:
+    check(".desktop válido", r.returncode == 0 and not r.stdout.strip(), r.stdout + r.stderr)
+desk = open(os.path.join(RAIZ_PROY, "packaging", "picphotoviewer.desktop"), encoding="utf-8").read()
+check(".desktop con [es]", all(f"{k}[es]=" in desk for k in ("Name", "GenericName", "Comment", "Keywords")))
 
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\n{OK} comprobaciones correctas, {FALLAS} fallas")

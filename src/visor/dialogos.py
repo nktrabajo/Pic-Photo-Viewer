@@ -6,30 +6,33 @@ from PySide6.QtWidgets import (QDialog, QDialogButtonBox, QFormLayout, QLabel, Q
                                QVBoxLayout)
 
 from core import config
+from core import idioma
+from core.idioma import N, tr
 from visor import imagenes
 
+# N(): se traducen al pintarlos (ventana._pintar_ayuda), no al importar
 ATAJOS = [
-    ("← / →, Re Pág / Av Pág", "Foto anterior / siguiente"),
-    ("Inicio / Fin", "Primera / última foto"),
-    ("Rueda del ratón", "Acercar / alejar donde está el puntero"),
-    ("+ / −", "Acercar / alejar"),
-    ("1  o  0", "Tamaño real (1:1) / ajustar a la pantalla"),
-    ("Doble clic", "Alternar tamaño real y ajustado"),
-    ("Arrastrar", "Moverse por la foto ampliada"),
-    ("F5  o  Ctrl+Espacio", "Presentación"),
-    ("Ctrl+R / Ctrl+Mayús+R", "Rotar a la derecha / izquierda"),
-    ("Ctrl+8  o  S", "Poner o quitar estrella"),
-    ("Ctrl+C", "Copiar la imagen"),
-    ("Ctrl+P", "Imprimir"),
-    ("Ctrl+E", "Abrir con el editor"),
-    ("Supr", "Mover a la papelera"),
-    ("Alt+Intro", "Propiedades"),
-    ("Esc  o  clic fuera de la foto", "Cerrar"),
+    (N("← / →, Re Pág / Av Pág"), N("Foto anterior / siguiente")),
+    (N("Inicio / Fin"), N("Primera / última foto")),
+    (N("Rueda del ratón"), N("Acercar / alejar donde está el puntero")),
+    ("+ / −", N("Acercar / alejar")),
+    (N("1  o  0"), N("Tamaño real (1:1) / ajustar a la pantalla")),
+    (N("Doble clic"), N("Alternar tamaño real y ajustado")),
+    (N("Arrastrar"), N("Moverse por la foto ampliada")),
+    (N("F5  o  Ctrl+Espacio"), N("Presentación")),
+    (N("Ctrl+R / Ctrl+Mayús+R"), N("Rotar a la derecha / izquierda")),
+    (N("Ctrl+8  o  S"), N("Poner o quitar estrella")),
+    ("Ctrl+C", N("Copiar la imagen")),
+    ("Ctrl+P", N("Imprimir")),
+    ("Ctrl+E", N("Abrir con el editor")),
+    (N("Supr"), N("Mover a la papelera")),
+    (N("Alt+Intro"), N("Propiedades")),
+    (N("Esc  o  clic fuera de la foto"), N("Cerrar")),
 ]
 
 _EXIF = {
-    0x010F: "Fabricante", 0x0110: "Cámara", 0x9003: "Fecha de la toma", 0x829A: "Exposición",
-    0x829D: "Apertura (f)", 0x8827: "ISO", 0x920A: "Distancia focal (mm)", 0xA434: "Lente",
+    0x010F: N("Fabricante"), 0x0110: N("Cámara"), 0x9003: N("Fecha de la toma"), 0x829A: N("Exposición"),
+    0x829D: N("Apertura (f)"), 0x8827: "ISO", 0x920A: N("Distancia focal (mm)"), 0xA434: N("Lente"),
 }
 
 
@@ -59,7 +62,7 @@ def _exif(ruta):
                 v = f"1/{round(1 / float(v))} s"
             elif tag in (0x829D, 0x920A):
                 v = f"{float(v):g}"
-            out.append((nombre, str(v).strip("\x00 ")))
+            out.append((tr(nombre), str(v).strip("\x00 ")))
     except Exception:
         pass
     return out
@@ -67,16 +70,17 @@ def _exif(ruta):
 
 def propiedades(parent, ruta):
     d = QDialog(parent)
-    d.setWindowTitle("Propiedades")
+    d.setWindowTitle(tr("Propiedades"))
     form = QFormLayout()
     st = os.stat(ruta)
     tam = imagenes.dimensiones(ruta)
     filas = [
-        ("Nombre", os.path.basename(ruta)),
-        ("Carpeta", os.path.dirname(ruta)),
-        ("Tamaño", f"{_bytes(st.st_size)} ({st.st_size:,} bytes)".replace(",", ".")),
-        ("Dimensiones", f"{tam.width()} × {tam.height()} píxeles" if tam else "—"),
-        ("Modificado", datetime.fromtimestamp(st.st_mtime).strftime("%Y-%m-%d %H:%M:%S")),
+        (tr("Nombre"), os.path.basename(ruta)),
+        (tr("Carpeta"), os.path.dirname(ruta)),
+        (tr("Tamaño"), f"{_bytes(st.st_size)} ({st.st_size:,} bytes)".replace(
+            ",", "," if idioma.actual() == "en" else ".")),
+        (tr("Dimensiones"), tr("{ancho} × {alto} píxeles", ancho=tam.width(), alto=tam.height()) if tam else "—"),
+        (tr("Modificado"), datetime.fromtimestamp(st.st_mtime).strftime("%Y-%m-%d %H:%M:%S")),
     ] + _exif(ruta)
     for k, v in filas:
         lbl = QLabel(v)
@@ -94,9 +98,10 @@ def propiedades(parent, ruta):
 
 def acerca_de(parent):
     QMessageBox.about(
-        parent, "Acerca de PicPhotoViewer",
-        f"<h3>PicPhotoViewer {config.version()}</h3>"
-        "<p>Visor de fotos para Linux al estilo del clásico visor de Picasa: "
-        "se abre sobre el escritorio, con la tira de fotos de la carpeta abajo.</p>"
-        "<p>Proyecto independiente, sin relación con Google. "
-        "<a href='https://github.com/nktrabajo/Pic-Photo-Viewer'>github.com/nktrabajo/Pic-Photo-Viewer</a></p>")
+        parent, tr("Acerca de PicPhotoViewer"),
+        tr("<h3>PicPhotoViewer {version}</h3>"
+           "<p>Visor de fotos para Linux al estilo del clásico visor de Picasa: "
+           "se abre sobre el escritorio, con la tira de fotos de la carpeta abajo.</p>"
+           "<p>Proyecto independiente, sin relación con Google. "
+           "<a href='https://github.com/nktrabajo/Pic-Photo-Viewer'>github.com/nktrabajo/Pic-Photo-Viewer</a></p>",
+           version=config.version()))

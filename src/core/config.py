@@ -26,6 +26,7 @@ DEFAULTS = {
     "version_ignorada": "",       # «no volver a avisar de esta versión»
     "preguntar_predeterminado": "si",   # «no» = el usuario pidió no volver a preguntar
     "ultima_pregunta_predeterminado": "0",
+    "idioma": "auto",             # auto (según LANGUAGE/LC_ALL/LC_MESSAGES/LANG) | es | en
 }
 
 EDITORES_CONOCIDOS = ["gimp", "pinta", "krita", "kolourpaint", "drawing", "darktable"]

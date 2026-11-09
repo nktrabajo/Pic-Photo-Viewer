@@ -8,6 +8,7 @@ import shutil
 import subprocess
 
 from core import config
+from core.idioma import tr
 from core.logger import get_logger
 
 log = get_logger()
@@ -33,12 +34,12 @@ def rotar(ruta, grados):
     if ext in _JPEG:
         exiftran = shutil.which("exiftran")
         if not exiftran:
-            raise ErrorAccion("Falta el programa «exiftran» (sudo apt install exiftran).")
+            raise ErrorAccion(tr("Falta el programa «exiftran» (sudo apt install exiftran)."))
         bandera = "-9" if grados == 90 else "-2"
         r = subprocess.run([exiftran, "-i", "-p", bandera, ruta],
                            capture_output=True, text=True)
         if r.returncode != 0:
-            raise ErrorAccion(f"exiftran falló: {r.stderr.strip()}")
+            raise ErrorAccion(tr("exiftran falló: {error}", error=r.stderr.strip()))
     else:
         _rotar_pil(ruta, grados)
     log.info("Imagen rotada", {"archivo": ruta, "grados": grados})
@@ -48,7 +49,7 @@ def _rotar_pil(ruta, grados):
     from PIL import Image, ImageOps
     with Image.open(ruta) as img:
         if getattr(img, "n_frames", 1) > 1:
-            raise ErrorAccion("No se rotan imágenes animadas.")
+            raise ErrorAccion(tr("No se rotan imágenes animadas."))
         fmt = img.format
         info = dict(img.info)
         img = ImageOps.exif_transpose(img)  # dejar la orientación aplicada en píxeles
@@ -74,7 +75,7 @@ def mandar_a_papelera(ruta):
     if not ok:
         r = subprocess.run(["gio", "trash", ruta], capture_output=True, text=True)
         if r.returncode != 0:
-            raise ErrorAccion(f"No se pudo mandar a la papelera: {r.stderr.strip()}")
+            raise ErrorAccion(tr("No se pudo mandar a la papelera: {error}", error=r.stderr.strip()))
     log.info("Imagen enviada a la papelera", {"archivo": ruta})
 
 
@@ -131,7 +132,7 @@ def hacer_predeterminado():
     r = subprocess.run(["xdg-mime", "default", "picphotoviewer.desktop", *TIPOS_MIME],
                        capture_output=True, text=True)
     if r.returncode != 0:
-        raise ErrorAccion(r.stderr.strip() or "xdg-mime falló")
+        raise ErrorAccion(r.stderr.strip() or tr("xdg-mime falló"))
     log.info("PicPhotoViewer quedó como visor predeterminado", {"tipos": len(TIPOS_MIME)})
 
 

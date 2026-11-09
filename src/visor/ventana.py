@@ -15,11 +15,12 @@ import subprocess
 
 from PySide6.QtCore import (QEasingCurve, QPointF, QRectF, QSize, Qt, QTimer,
                             QVariantAnimation)
-from PySide6.QtGui import (QColor, QCursor, QFont, QGuiApplication, QImage, QKeySequence,
-                           QPainter, QPainterPath, QPen, QShortcut)
+from PySide6.QtGui import (QColor, QCursor, QFont, QFontMetrics, QGuiApplication, QImage,
+                           QKeySequence, QPainter, QPainterPath, QPen, QShortcut)
 from PySide6.QtWidgets import QApplication, QMenu, QMessageBox, QToolTip, QWidget
 
 from core import config
+from core.idioma import tr
 from core.logger import get_logger
 from visor import acciones, dialogos, dibujo, estrellas, imagenes
 from visor.cargador import Cargador
@@ -134,7 +135,7 @@ class Visor(QWidget):
         if ruta != self.ruta:
             return
         if img.isNull():
-            self.error = err or "No se pudo abrir la imagen"
+            self.error = err or tr("No se pudo abrir la imagen")
             log.warning("No se pudo abrir una imagen", {"archivo": ruta, "error": self.error})
         self.img = None if img.isNull() else img
         self._escalada = None
@@ -197,20 +198,20 @@ class Visor(QWidget):
     def _crear_botones(self):
         B = Boton
         self.botones = [
-            B("zoom_mas", texto="+", ayuda="Acercar (+)"),
-            B("zoom_menos", texto="−", ayuda="Alejar (−)"),
-            B("zoom_1", texto="1:1", ayuda="Tamaño real (1)"),
-            B("editor", texto="Abrir con editor", ayuda="Abrir con el editor de imágenes (Ctrl+E)"),
-            B("anterior", tipo="flecha_izq", ayuda="Anterior (←)"),
-            B("play", tipo="play", ayuda="Presentación (F5)"),
-            B("siguiente", tipo="flecha_der", ayuda="Siguiente (→)"),
-            B("carpeta", texto="Abrir carpeta", ayuda="Mostrar la foto en su carpeta"),
-            B("rot_izq", texto="↺", ayuda="Rotar a la izquierda (Ctrl+Mayús+R)"),
-            B("rot_der", texto="↻", ayuda="Rotar a la derecha (Ctrl+R)"),
-            B("estrella", ayuda="Estrella (Ctrl+8)"),
-            B("menu", ayuda="Más opciones"),
-            B("cerrar", tipo="cerrar", ayuda="Cerrar (Esc)"),
-            B("ayuda", tipo="ayuda", ayuda="Atajos de teclado"),
+            B("zoom_mas", texto="+", ayuda=tr("Acercar (+)")),
+            B("zoom_menos", texto="−", ayuda=tr("Alejar (−)")),
+            B("zoom_1", texto="1:1", ayuda=tr("Tamaño real (1)")),
+            B("editor", texto=tr("Abrir con editor"), ayuda=tr("Abrir con el editor de imágenes (Ctrl+E)")),
+            B("anterior", tipo="flecha_izq", ayuda=tr("Anterior (←)")),
+            B("play", tipo="play", ayuda=tr("Presentación (F5)")),
+            B("siguiente", tipo="flecha_der", ayuda=tr("Siguiente (→)")),
+            B("carpeta", texto=tr("Abrir carpeta"), ayuda=tr("Mostrar la foto en su carpeta")),
+            B("rot_izq", texto="↺", ayuda=tr("Rotar a la izquierda (Ctrl+Mayús+R)")),
+            B("rot_der", texto="↻", ayuda=tr("Rotar a la derecha (Ctrl+R)")),
+            B("estrella", ayuda=tr("Estrella (Ctrl+8)")),
+            B("menu", ayuda=tr("Más opciones")),
+            B("cerrar", tipo="cerrar", ayuda=tr("Cerrar (Esc)")),
+            B("ayuda", tipo="ayuda", ayuda=tr("Atajos de teclado")),
         ]
         self._por_id = {b.id: b for b in self.botones}
 
@@ -222,6 +223,12 @@ class Visor(QWidget):
         # bloque central: flechas + play
         anchos = {"zoom_mas": 22, "zoom_menos": 22, "zoom_1": 28, "editor": 118,
                   "carpeta": 104, "rot_izq": 26, "rot_der": 26, "estrella": 30, "menu": 30}
+        # las píldoras con texto se miden: el texto cambia con el idioma (3.10)
+        f = QFont(self.font())
+        f.setPixelSize(12)  # el mismo tamaño con que las pinta dibujo.pildora
+        fm = QFontMetrics(f)
+        for ident in ("editor", "carpeta"):
+            anchos[ident] = max(anchos[ident], fm.horizontalAdvance(self._por_id[ident].texto) + 24)
         play_r = 17
         flecha_w, flecha_h = 26, 22
         P = self._por_id
@@ -307,7 +314,7 @@ class Visor(QWidget):
             f = QFont(self.font())
             f.setPixelSize(15)
             p.setFont(f)
-            texto = self.error or "Cargando…"
+            texto = self.error or tr("Cargando…")
             p.drawText(self._area_foto(), Qt.AlignmentFlag.AlignCenter, texto)
             return
         z = self.zoom_actual()
@@ -369,7 +376,7 @@ class Visor(QWidget):
         f.setPixelSize(11)
         p.setFont(f)
         dibujo.texto_con_sombra(p, r.adjusted(0, 0, -16, 0), Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
-                                f"{self.indice + 1} de {len(self.lista)}", QColor(200, 200, 200))
+                                tr("{i} de {n}", i=self.indice + 1, n=len(self.lista)), QColor(200, 200, 200))
 
     def _posiciones_tira(self):
         """[(indice, QRectF)] de las miniaturas visibles. La actual queda al
@@ -455,17 +462,22 @@ class Visor(QWidget):
         f.setPixelSize(13)
         p.setFont(f)
         alto_fila = 22
-        r = QRectF(0, 0, 560, 40 + alto_fila * len(dialogos.ATAJOS))
+        atajos = [(tr(t), tr(q)) for t, q in dialogos.ATAJOS]
+        # columnas medidas: el ancho del texto cambia con el idioma (3.10)
+        fm = p.fontMetrics()
+        col1 = max(220, max(fm.horizontalAdvance(t) for t, _ in atajos) + 20)
+        col2 = max(300, max(fm.horizontalAdvance(q) for _, q in atajos) + 10)
+        r = QRectF(0, 0, 30 + col1 + col2 + 10, 40 + alto_fila * len(atajos))
         r.moveCenter(QPointF(self.width() / 2, self.height() / 2 - 40))
         p.setPen(QPen(QColor(90, 90, 90), 1))
         p.setBrush(QColor(18, 18, 20, 240))
         p.drawRoundedRect(r, 10, 10)
         y = r.top() + 20
-        for tecla, que in dialogos.ATAJOS:
+        for tecla, que in atajos:
             p.setPen(QColor("#9fc7ff"))
-            p.drawText(QRectF(r.left() + 20, y, 220, alto_fila), Qt.AlignmentFlag.AlignVCenter, tecla)
+            p.drawText(QRectF(r.left() + 20, y, col1, alto_fila), Qt.AlignmentFlag.AlignVCenter, tecla)
             p.setPen(QColor("white"))
-            p.drawText(QRectF(r.left() + 250, y, 300, alto_fila), Qt.AlignmentFlag.AlignVCenter, que)
+            p.drawText(QRectF(r.left() + 30 + col1, y, col2, alto_fila), Qt.AlignmentFlag.AlignVCenter, que)
             y += alto_fila
 
     # ------------------------------------------------------------ mensajes
@@ -563,7 +575,7 @@ class Visor(QWidget):
             self._escalada = None
             self._timer_pres.start()
             self.setCursor(Qt.CursorShape.BlankCursor)
-            self.avisar("Presentación — Esc o clic para salir")
+            self.avisar(tr("Presentación — Esc o clic para salir"))
         else:
             self._timer_pres.stop()
             self.zoom = None
@@ -590,7 +602,7 @@ class Visor(QWidget):
                 self.alternar_presentacion()
             elif ident == "editor":
                 ed = acciones.abrir_con_editor(r)
-                self.avisar(f"Abriendo en {ed}…" if ed else "Abriendo con la aplicación del sistema…")
+                self.avisar(tr("Abriendo en {editor}…", editor=ed) if ed else tr("Abriendo con la aplicación del sistema…"))
             elif ident == "carpeta":
                 acciones.mostrar_en_carpeta(r)
                 self.showMinimized()
@@ -610,14 +622,14 @@ class Visor(QWidget):
             QMessageBox.warning(self, "PicPhotoViewer", str(e))
         except Exception as e:
             log.error("Falló una acción", {"accion": ident, "archivo": r, "error": repr(e)})
-            QMessageBox.warning(self, "PicPhotoViewer", f"No se pudo completar la acción:\n{e}")
+            QMessageBox.warning(self, "PicPhotoViewer", tr("No se pudo completar la acción:\n{error}", error=e))
 
     def rotar(self, grados):
         r = self.ruta
         if r is None or self.img is None:
             return
         if not os.access(r, os.W_OK):
-            raise acciones.ErrorAccion("No hay permiso para modificar este archivo.")
+            raise acciones.ErrorAccion(tr("No hay permiso para modificar este archivo."))
         acciones.rotar(r, grados)
         self.cargador.olvidar(r)
         self._cargar_actual()
@@ -629,7 +641,7 @@ class Visor(QWidget):
         try:
             estrellas.poner_estrella(r, valor)
         except OSError as e:
-            raise acciones.ErrorAccion(f"No se pudo guardar la estrella en .picasa.ini:\n{e}")
+            raise acciones.ErrorAccion(tr("No se pudo guardar la estrella en .picasa.ini:\n{error}", error=e))
         (self.con_estrella.add if valor else self.con_estrella.discard)(nombre)
         self._actualizar_botones()
         self.update()
@@ -652,7 +664,7 @@ class Visor(QWidget):
                                  stdin=f, start_new_session=True)
         elif self.img is not None:
             QApplication.clipboard().setImage(self.img)
-        self.avisar("Imagen copiada")
+        self.avisar(tr("Imagen copiada"))
 
     def imprimir(self):
         from PySide6.QtPrintSupport import QPrintDialog, QPrinter
@@ -683,27 +695,27 @@ class Visor(QWidget):
             return
         self.indice = min(self.indice, len(self.lista) - 1)
         self._cargar_actual()
-        self.avisar(f"«{os.path.basename(r)}» se envió a la papelera")
+        self.avisar(tr("«{nombre}» se envió a la papelera", nombre=os.path.basename(r)))
 
     def fondo_escritorio(self):
         from fondos.dialogo import elegir_y_aplicar
         if elegir_y_aplicar(self.ruta, self):
-            self.avisar("Fondo de escritorio aplicado")
+            self.avisar(tr("Fondo de escritorio aplicado"))
 
     def fondo_gdm(self):
         from fondos import gdm
         if not gdm.disponible():
-            raise acciones.ErrorAccion("El ayudante de GDM no está instalado (se instala con el .deb).")
+            raise acciones.ErrorAccion(tr("El ayudante de GDM no está instalado (se instala con el .deb)."))
         self.setCursor(Qt.CursorShape.WaitCursor)
         try:
             gdm.aplicar(self.ruta)
         except gdm.ErrorGdm as e:
             if str(e) != "cancelado":
-                raise acciones.ErrorAccion(f"No se pudo cambiar el fondo de inicio de sesión:\n{e}")
+                raise acciones.ErrorAccion(tr("No se pudo cambiar el fondo de inicio de sesión:\n{error}", error=e))
             return
         finally:
             self.unsetCursor()
-        self.avisar("Fondo de inicio de sesión aplicado: se verá al cerrar sesión o reiniciar")
+        self.avisar(tr("Fondo de inicio de sesión aplicado: se verá al cerrar sesión o reiniciar"))
 
     def restaurar_gdm(self):
         from fondos import gdm
@@ -713,11 +725,11 @@ class Visor(QWidget):
             if str(e) != "cancelado":
                 raise acciones.ErrorAccion(str(e))
             return
-        self.avisar("Fondo de inicio de sesión original restaurado")
+        self.avisar(tr("Fondo de inicio de sesión original restaurado"))
 
     def hacer_predeterminado(self):
         acciones.hacer_predeterminado()
-        self.avisar("PicPhotoViewer es ahora el visor de imágenes predeterminado")
+        self.avisar(tr("PicPhotoViewer es ahora el visor de imágenes predeterminado"))
 
     def preguntar_predeterminado(self):
         """Primera vez que se abre (o 7 días después de «Ahora no»)."""
@@ -728,11 +740,11 @@ class Visor(QWidget):
         caja = QMessageBox(self)
         caja.setWindowTitle("PicPhotoViewer")
         caja.setIcon(QMessageBox.Icon.Question)
-        caja.setText("<b>¿Abrir las imágenes con PicPhotoViewer?</b><br>"
-                     "Al hacer doble clic en una foto se abrirá con este visor.")
-        b_si = caja.addButton("Sí, usar PicPhotoViewer", QMessageBox.ButtonRole.AcceptRole)
-        caja.addButton("Ahora no", QMessageBox.ButtonRole.RejectRole)
-        b_nunca = caja.addButton("No volver a preguntar", QMessageBox.ButtonRole.DestructiveRole)
+        caja.setText(tr("<b>¿Abrir las imágenes con PicPhotoViewer?</b><br>"
+                        "Al hacer doble clic en una foto se abrirá con este visor."))
+        b_si = caja.addButton(tr("Sí, usar PicPhotoViewer"), QMessageBox.ButtonRole.AcceptRole)
+        caja.addButton(tr("Ahora no"), QMessageBox.ButtonRole.RejectRole)
+        b_nunca = caja.addButton(tr("No volver a preguntar"), QMessageBox.ButtonRole.DestructiveRole)
         caja.setDefaultButton(b_si)
         caja.exec()
         if caja.clickedButton() is b_si:
@@ -753,22 +765,22 @@ class Visor(QWidget):
             a.triggered.connect(lambda: self._seguro(fn))
             return a
 
-        item("Copiar imagen", self.copiar, "Ctrl+C", hay)
-        item("Imprimir…", self.imprimir, "Ctrl+P", hay)
+        item(tr("Copiar imagen"), self.copiar, "Ctrl+C", hay)
+        item(tr("Imprimir…"), self.imprimir, "Ctrl+P", hay)
         m.addSeparator()
-        item("Poner como fondo de escritorio…", self.fondo_escritorio, habilitado=hay)
-        item("Poner como fondo de inicio de sesión", self.fondo_gdm, habilitado=hay)
-        item("Restaurar el fondo de inicio de sesión original", self.restaurar_gdm)
+        item(tr("Poner como fondo de escritorio…"), self.fondo_escritorio, habilitado=hay)
+        item(tr("Poner como fondo de inicio de sesión"), self.fondo_gdm, habilitado=hay)
+        item(tr("Restaurar el fondo de inicio de sesión original"), self.restaurar_gdm)
         m.addSeparator()
-        item("Abrir con editor", lambda: self.accion("editor"), "Ctrl+E")
-        item("Mostrar en la carpeta", lambda: self.accion("carpeta"))
-        item("Propiedades", lambda: dialogos.propiedades(self, self.ruta), "Alt+Return")
-        item("Mover a la papelera", self.papelera, "Delete")
+        item(tr("Abrir con editor"), lambda: self.accion("editor"), "Ctrl+E")
+        item(tr("Mostrar en la carpeta"), lambda: self.accion("carpeta"))
+        item(tr("Propiedades"), lambda: dialogos.propiedades(self, self.ruta), "Alt+Return")
+        item(tr("Mover a la papelera"), self.papelera, "Delete")
         m.addSeparator()
         if not acciones.es_predeterminado():
-            item("Usar como visor de imágenes predeterminado", self.hacer_predeterminado)
-        item("Buscar actualizaciones", lambda: self.buscar_actualizaciones(manual=True))
-        item("Acerca de PicPhotoViewer", lambda: dialogos.acerca_de(self))
+            item(tr("Usar como visor de imágenes predeterminado"), self.hacer_predeterminado)
+        item(tr("Buscar actualizaciones"), lambda: self.buscar_actualizaciones(manual=True))
+        item(tr("Acerca de PicPhotoViewer"), lambda: dialogos.acerca_de(self))
         if arriba:
             pos = pos - QPointF(0, m.sizeHint().height()).toPoint()
         m.exec(pos)
@@ -780,7 +792,7 @@ class Visor(QWidget):
             QMessageBox.warning(self, "PicPhotoViewer", str(e))
         except Exception as e:
             log.error("Falló una acción del menú", {"archivo": self.ruta, "error": repr(e)})
-            QMessageBox.warning(self, "PicPhotoViewer", f"No se pudo completar la acción:\n{e}")
+            QMessageBox.warning(self, "PicPhotoViewer", tr("No se pudo completar la acción:\n{error}", error=e))
 
     # ------------------------------------------------------------ actualizaciones
     def buscar_actualizaciones(self, manual=False):

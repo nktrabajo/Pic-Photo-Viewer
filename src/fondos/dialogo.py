@@ -5,6 +5,7 @@ from PySide6.QtGui import QColor, QFont, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QHBoxLayout, QLabel,
                                QMessageBox, QPushButton, QVBoxLayout, QWidget)
 
+from core.idioma import tr
 from fondos import aplicar as ap
 from fondos import componer as comp
 from visor.imagenes import cargar
@@ -100,7 +101,7 @@ class Diagrama(QWidget):
             f.setBold(False)
             f.setPointSize(9)
             p.setFont(f)
-            texto = f"{pant.nombre}\n{pant.descripcion}" + ("  ·  principal" if pant.principal else "")
+            texto = f"{pant.nombre}\n{pant.descripcion}" + (tr("  ·  principal") if pant.principal else "")
             caja = QRectF(r.x() + 4, c.y() + 20, r.width() - 8, 40)
             p.setPen(QColor(0, 0, 0, 200))
             p.drawText(caja.translated(1, 1), Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop, texto)
@@ -141,7 +142,7 @@ class DialogoFondo(QDialog):
         super().__init__(parent)
         self.ruta = ruta
         self.resultado = None
-        self.setWindowTitle("Poner como fondo de escritorio")
+        self.setWindowTitle(tr("Poner como fondo de escritorio"))
         self.setModal(True)
         self.resize(820, 540)
 
@@ -149,7 +150,7 @@ class DialogoFondo(QDialog):
         mini, _ = cargar(ruta, maximo=_tam(900))
         previas = _previas_actuales(self.pantallas, self.lienzo)
 
-        cab = QLabel("Elige en qué pantallas va esta imagen. Clic en una pantalla para marcarla o desmarcarla.")
+        cab = QLabel(tr("Elige en qué pantallas va esta imagen. Clic en una pantalla para marcarla o desmarcarla."))
         cab.setWordWrap(True)
         self.diagrama = Diagrama(self.pantallas, self.lienzo, mini, previas)
         prim = [p.nombre for p in self.pantallas if p.principal] or [self.pantallas[0].nombre]
@@ -158,23 +159,23 @@ class DialogoFondo(QDialog):
 
         self.cmb_modo = QComboBox()
         for m in comp.MODOS:
-            self.cmb_modo.addItem(comp.NOMBRES_MODO[m], m)
+            self.cmb_modo.addItem(tr(comp.NOMBRES_MODO[m]), m)
         self.cmb_modo.currentIndexChanged.connect(self._actualizar)
-        self.chk_ext = QCheckBox("Una sola imagen extendida sobre las pantallas elegidas")
+        self.chk_ext = QCheckBox(tr("Una sola imagen extendida sobre las pantallas elegidas"))
         self.chk_ext.toggled.connect(self._actualizar)
 
-        b_todas = QPushButton("Todas")
+        b_todas = QPushButton(tr("Todas"))
         b_todas.clicked.connect(lambda: self._marcar(True))
-        b_ninguna = QPushButton("Ninguna")
+        b_ninguna = QPushButton(tr("Ninguna"))
         b_ninguna.clicked.connect(lambda: self._marcar(False))
-        self.b_aplicar = QPushButton("Aplicar")
+        self.b_aplicar = QPushButton(tr("Aplicar"))
         self.b_aplicar.setDefault(True)
         self.b_aplicar.clicked.connect(self._aplicar)
-        b_cancelar = QPushButton("Cancelar")
+        b_cancelar = QPushButton(tr("Cancelar"))
         b_cancelar.clicked.connect(self.reject)
 
         fila = QHBoxLayout()
-        fila.addWidget(QLabel("Ajuste:"))
+        fila.addWidget(QLabel(tr("Ajuste:")))
         fila.addWidget(self.cmb_modo)
         fila.addSpacing(16)
         fila.addWidget(self.chk_ext)
@@ -214,7 +215,7 @@ class DialogoFondo(QDialog):
         except Exception as e:  # se muestra al usuario y queda en el log
             ap.log.error("No se pudo aplicar el fondo", {"imagen": self.ruta, "error": str(e)})
             self.unsetCursor()
-            QMessageBox.critical(self, "Fondo de escritorio", f"No se pudo aplicar el fondo:\n{e}")
+            QMessageBox.critical(self, tr("Fondo de escritorio"), tr("No se pudo aplicar el fondo:\n{error}", error=e))
             return
         self.accept()
 

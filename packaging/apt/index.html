@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PicPhotoViewer APT repository</title>
+<style>
+  :root { --bg: #f6f7f9; --fg: #1d2330; --muted: #5b6475; --card: #fff; --code: #eef1f5; --link: #2563c9; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #16191f; --fg: #e6e9ef; --muted: #9aa3b2; --card: #1f232b; --code: #2a2f39; --link: #7aa7ff; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 16px; }
+  .card { background: var(--card); border-radius: 12px; padding: 20px 24px; margin: 20px 0; }
+  pre { background: var(--code); padding: 12px 14px; border-radius: 8px; overflow-x: auto; font-size: 14px; }
+  a { color: var(--link); }
+  p.muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>PicPhotoViewer APT repository</h1>
+  <p class="muted">Signed Debian repository for
+    <a href="https://github.com/nktrabajo/Pic-Photo-Viewer">PicPhotoViewer</a>,
+    a photo viewer that opens over your desktop.</p>
+
+  <div class="card">
+    <h2>Install (Debian 13 / GNOME)</h2>
+<pre>sudo curl -fsSLo /usr/share/keyrings/picphotoviewer-archive-keyring.gpg \
+  https://nktrabajo.github.io/Pic-Photo-Viewer/picphotoviewer-archive-keyring.gpg
+sudo curl -fsSLo /etc/apt/sources.list.d/picphotoviewer.sources \
+  https://nktrabajo.github.io/Pic-Photo-Viewer/picphotoviewer.sources
+sudo apt update &amp;&amp; sudo apt install picphotoviewer</pre>
+    <p>Updates then arrive with <code>sudo apt upgrade</code>. The package itself also ships
+      this repository, so a <code>.deb</code> installed from the
+      <a href="https://github.com/nktrabajo/Pic-Photo-Viewer/releases">Releases page</a>
+      keeps updating through apt too.</p>
+  </div>
+
+  <div class="card">
+    <h2>Signing key</h2>
+    <p>Fingerprint: <code>633E F5A6 FC40 0D95 14F8 C6E1 D1B8 2731 77CD 5791</code></p>
+  </div>
+</main>
+</body>
+</html>

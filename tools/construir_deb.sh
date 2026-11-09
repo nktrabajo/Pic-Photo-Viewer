@@ -55,6 +55,11 @@ PY
 find "$P/usr/share/icons" -type f -exec chmod 644 {} +
 install -m 644 "$RAIZ/packaging/polkit/com.itcorp.picphotoviewer.policy" "$P/usr/share/polkit-1/actions/"
 install -m 644 "$RAIZ/packaging/nautilus/picphotoviewer-nautilus.py" "$P/usr/share/nautilus-python/extensions/"
+# repositorio APT propio (GitHub Pages): así un .deb instalado a mano también
+# recibe las versiones nuevas con `apt upgrade`. El .sources es conffile.
+install -d "$P/etc/apt/sources.list.d" "$P/usr/share/keyrings"
+install -m 644 "$RAIZ/packaging/apt/picphotoviewer.sources" "$P/etc/apt/sources.list.d/"
+install -m 644 "$RAIZ/packaging/apt/picphotoviewer-archive-keyring.gpg" "$P/usr/share/keyrings/"
 install -m 644 "$RAIZ/packaging/debian/copyright" "$P/usr/share/doc/picphotoviewer/"
 gzip -9n -c "$RAIZ/packaging/debian/changelog" > "$P/usr/share/doc/picphotoviewer/changelog.gz"
 chmod 644 "$P/usr/share/doc/picphotoviewer/changelog.gz"
@@ -65,6 +70,8 @@ find "$P/usr/share/picphotoviewer" -type f -exec chmod 644 {} +
 TAM=$(du -sk "$P/usr" | cut -f1)
 sed -e "s/@VERSION@/$VERSION/" -e "s/@SIZE@/$TAM/" "$RAIZ/packaging/debian/control.in" > "$P/DEBIAN/control"
 install -m 644 "$RAIZ/packaging/debian/triggers" "$P/DEBIAN/"
+echo /etc/apt/sources.list.d/picphotoviewer.sources > "$P/DEBIAN/conffiles"
+chmod 644 "$P/DEBIAN/conffiles"
 install -m 755 "$RAIZ/packaging/debian/postinst" "$RAIZ/packaging/debian/prerm" "$RAIZ/packaging/debian/postrm" "$P/DEBIAN/"
 (cd "$P" && find usr -type f -exec md5sum {} + | sort -k2 > DEBIAN/md5sums)
 

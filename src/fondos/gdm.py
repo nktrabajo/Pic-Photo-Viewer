@@ -12,6 +12,7 @@ import subprocess
 import tempfile
 
 from core import config
+from core.idioma import tr
 from core.logger import get_logger
 
 log = get_logger()
@@ -32,7 +33,7 @@ def _pkexec(*args):
     if r.returncode in (126, 127):  # 126 = cancelado en el diálogo, 127 = sin autorización
         raise ErrorGdm("cancelado")
     if r.returncode != 0:
-        raise ErrorGdm(r.stderr.strip() or "el ayudante falló")
+        raise ErrorGdm(r.stderr.strip() or tr("el ayudante falló"))
     return r.stdout.strip()
 
 
