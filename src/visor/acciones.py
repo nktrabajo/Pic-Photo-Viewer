@@ -31,6 +31,11 @@ def rotar(ruta, grados):
     if grados not in (90, -90):
         raise ValueError(grados)
     ext = os.path.splitext(ruta)[1].lower()
+    from visor import raw
+    if raw.es_raw(ruta):
+        # PIL no sabe escribir RAW, y reescribirlo arriesgaría el original: la
+        # rotación de un RAW es cosa del revelador (darktable, RawTherapee…)
+        raise ErrorAccion(tr("Las fotos RAW no se rotan desde el visor: rótala en tu revelador (darktable, RawTherapee…)."))
     if ext in _JPEG:
         exiftran = shutil.which("exiftran")
         if not exiftran:

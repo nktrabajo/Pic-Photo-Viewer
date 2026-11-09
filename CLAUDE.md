@@ -296,6 +296,34 @@ HOME temporal. Las fotos son de Unsplash vía `picsum.photos/id/<n>/1600/1067` (
 Unsplash, sin atribución obligatoria; igual se acredita) y NO están en el repo: ids usados
 1015 1016 1018 1019 1022 1036 1039 1043 1044 1050 110 129 15 28 29 49.
 
+### 3.13 RAW: el JPEG incrustado en vez de revelar (2026-11-08, reporte del usuario — v0.2.1)
+
+**Síntoma** (captura del usuario): en una carpeta con 1057 CR3 de 28 MB (Canon, en un
+SSD NTFS) la tira se llenaba de a una miniatura por segundo. **Medido**: el plugin
+`kimg_raw` (LibRaw) tarda **2,2 s por CR3**, y se usaba igual para una miniatura de 96 px
+(`setScaledSize` no le ahorra el revelado); el disco lee los 28 MB en 0,12 s, no era eso.
+
+**Arreglo**: `src/visor/raw.py` busca los JPEG que la cámara guarda dentro del RAW (CR3
+por cajas ISO BMFF; CR2/NEF/ARW/DNG/… por IFD de TIFF; RAF por su cabecera), elige el
+más chico que cubra lo pedido (miniatura → PRVW de 1620×1080) o el más grande para la
+vista completa (en CR3, el JPEG de tamaño completo de la 1.ª pista), y aplica la
+orientación del RAW. `imagenes.cargar` lo usa para todo RAW; si no hay JPEG usable, o
+para la vista completa el más grande no llega al 90 % del tamaño real, sigue con LibRaw.
+**Medido con las fotos del usuario**: miniatura 7 ms (1029 en 14 s, un hilo), foto
+completa 0,31 s (antes 2,2 s), y en el visor la foto aparece en 0,8 s (antes 5,3 s) con
+las 28 miniaturas visibles en 1,4 s.
+
+- La vista completa de un RAW muestra el **JPEG de la cámara**, no un revelado de LibRaw
+  (es lo que vio el fotógrafo; se ve más claro que el revelado neutro de antes). Los
+  ajustes de los `.xmp` (darktable/Lightroom) no se aplican — tampoco se aplicaban antes.
+- **Rotar un RAW** ahora da un aviso claro («rótala en tu revelador») en vez del error
+  críptico de PIL. El archivo nunca se tocaba; ahora hay prueba de que queda intacto.
+- **Probado** (`prueba_todo.py`, bloque «RAW»): CR3, TIFF y RAF sintéticos con JPEG de
+  colores distintos (dicen de cuál salió la imagen) y un JPEG sin pérdida falso (SOF3)
+  más grande que los demás; orientación 6 y 8; RAW roto. Sabotajes vistos fallar: sin
+  orientación (3 fallas), miniatura del JPEG más grande (2), no usar raw.py (1).
+  Aceptar el SOF3 ya no rompe nada porque si un JPEG no decodifica se prueba el siguiente.
+
 ### 3.7 Logs (2026-11-08)
 
 `~/Logs/PicPhotoViewer-<fecha>.txt` como el estándar, pero solo se registran **acciones**
@@ -316,6 +344,7 @@ src/visor/ventana.py            la ventana estilo Picasa (≈900 líneas)
 src/visor/dibujo.py             botones e íconos pintados
 src/visor/cargador.py           imágenes y miniaturas en hilos, caché LRU
 src/visor/imagenes.py           formatos, orden natural, carga con EXIF
+src/visor/raw.py                JPEG incrustados en los RAW (3.13)
 src/visor/acciones.py           rotar, papelera, editor, carpeta, visor predeterminado
 src/visor/estrellas.py          .picasa.ini
 src/visor/dialogos.py           propiedades (EXIF), atajos, acerca de
@@ -341,12 +370,12 @@ tools/dibujar_icono.py          dibuja el ícono y la vista previa social
 tools/capturas_readme.py        capturas del README sin pantalla
 tools/publicar_apt.sh           repositorio APT firmado en gh-pages (3.11)
 packaging/apt/                  .sources, clave pública e index.html del repositorio APT
-tools/pruebas/                  prueba_todo.py (109) y prueba_visor.py (24 × 2 idiomas)
+tools/pruebas/                  prueba_todo.py (120) y prueba_visor.py (24 × 2 idiomas)
 ```
 
 ## Cómo se verificó (2026-11-08)
 
-- **`tools/pruebas/prueba_todo.py` — 109 comprobaciones, 0 fallas** (53 en la v0.1.0; +11 de la asociación en la v0.1.3; +45 de idiomas, 3.10): orden y
+- **`tools/pruebas/prueba_todo.py` — 120 comprobaciones, 0 fallas** (53 en la v0.1.0; +11 de la asociación en la v0.1.3; +45 de idiomas, 3.10; +11 de RAW, 3.13): orden y
   formatos; `.picasa.ini` (conserva claves de Picasa, borra secciones vacías, sin permiso
   falla); composición píxel por píxel con **la disposición real de los 4 monitores de dev**
   (rellenar, ajustar, centrar, extendida sobre 2 pantallas); `aplicar()` con gsettings falso
@@ -474,6 +503,19 @@ no la foto. Se revirtió el cambio en `acciones.py` y se creó el `HOME` en la p
 - **Verificado**: la prueba arranca SIN la carpeta; sacando el `makedirs` fallan 3
   comprobaciones.
 
+### 9.e La ventana se congelaba leyendo JPEG de un QBuffer en los hilos (2026-11-08, antes de publicar)
+
+- **Síntoma**: con la primera versión de `raw.py`, el visor sobre la carpeta real dejó de
+  pintarse más de 25 s (faulthandler: 4 hilos en `QImageReader.read`, el principal en
+  `paintEvent`). Sin `raw.py` la ventana respondía.
+- **Causa raíz**: el `QBuffer` creado desde Python es un envoltorio de PySide; cada
+  lectura virtual que hace `QImageReader` sobre él toma el GIL, y con 4 hilos leyendo
+  así el hilo de la interfaz no lo conseguía.
+- **Arreglo**: `raw.py` analiza los marcadores del JPEG a mano (tamaño, SOF, EXIF) y
+  decodifica con `QImage.fromData`; nada de QBuffer/QIODevice creados en Python dentro
+  de los hilos de carga. Comentario «OJO» en el código.
+- **Verificado**: misma medición, la ventana pinta cada 0,5 s y la foto llega en 0,8 s.
+
 ## Caminos descartados por experimento (no por opinión)
 
 - `update-alternatives` para el tema de GDM → en Debian 13 no existe esa alternativa → por
@@ -482,6 +524,7 @@ no la foto. Se revirtió el cambio en `acciones.py` y se creó el `HOME` en la p
 ## Qué le falta al proyecto (relevado el 2026-11-08)
 
 - GIF animados: se muestran como imagen fija (QMovie no está integrado).
+- RAW: no se aplican los ajustes de los `.xmp`; la vista completa es el JPEG de la cámara (3.13).
 - Si cambian los monitores (enchufar/desenchufar), el fondo compuesto no se rearma solo;
   se rearma al aplicar el siguiente.
 - Fondo XML de GNOME (los que cambian con la hora): al componer se toma su primera imagen.

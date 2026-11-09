@@ -193,6 +193,131 @@ ap.aplicar(rojo, ["eDP-1"], "ajustar", pantallas=[PANT2[1]], lienzo=QRect(0, 0, 
 check("una pantalla: modo de GNOME directo", GS["org.gnome.desktop.background picture-options"] == "'scaled'")
 check("fondo xml de GNOME", gnome.primera_imagen_xml("/no/existe.xml") is None)
 
+# ---------------------------------------------------------------- RAW: JPEG incrustados
+print("RAW: JPEG incrustados (CR3, TIFF, RAF sintéticos)")
+import struct  # noqa: E402
+from PySide6.QtCore import QBuffer, QByteArray, QIODevice, QSize  # noqa: E402
+from visor import raw  # noqa: E402
+
+
+def jpeg_mitades(w, h, claro="#ffffff"):
+    """JPEG con la mitad izquierda negra y la derecha `claro`: delata la rotación,
+    y el color dice de cuál de los JPEG incrustados salió."""
+    img = QImage(w, h, QImage.Format.Format_RGB32)
+    img.fill(QColor(claro))
+    for y in range(h):
+        for x in range(w // 2):
+            img.setPixel(x, y, 0xff000000)
+    ba = QByteArray()
+    buf = QBuffer(ba)
+    buf.open(QIODevice.OpenModeFlag.WriteOnly)
+    img.save(buf, "JPEG", 90)
+    return bytes(ba)
+
+
+def caja(tipo, datos):
+    return struct.pack(">I4s", 8 + len(datos), tipo) + datos
+
+
+def tiff_orientacion(v):
+    return b"II*\x00" + struct.pack("<I", 8) + struct.pack("<H", 1) + \
+        struct.pack("<HHII", 0x0112, 3, 1, v) + struct.pack("<I", 0)
+
+
+def cr3_sintetico(ruta, orient):
+    thmb, prvw, full = jpeg_mitades(160, 120, "#ff0000"), jpeg_mitades(800, 533, "#00ff00"), jpeg_mitades(1200, 800)
+    canon = caja(b"uuid", raw._UUID_CANON + caja(b"CMT1", tiff_orientacion(orient))
+                 + caja(b"THMB", b"\x00" * 16 + thmb))
+    prv = caja(b"uuid", raw._UUID_PRVW + b"\x00" * 8 + caja(b"PRVW", b"\x00" * 16 + prvw))
+
+    def armar(desp_full):
+        stbl = caja(b"stbl", caja(b"stsz", struct.pack(">III", 0, len(full), 1))
+                    + caja(b"co64", struct.pack(">IIQ", 0, 1, desp_full)))
+        trak = caja(b"trak", caja(b"mdia", caja(b"minf", stbl)))
+        return caja(b"ftyp", b"crx \x00\x00\x00\x01") + caja(b"moov", canon + trak) + prv
+    cab = armar(0)   # el largo no depende del desplazamiento (co64 es de 8 bytes fijos)
+    datos = armar(len(cab) + 8) + caja(b"mdat", full)   # + 8: la cabecera de mdat
+    with open(ruta, "wb") as f:
+        f.write(datos)
+
+
+def tiff_raw_sintetico(ruta, orient):
+    """Como un CR2/ARW: IFD0 con orientación + 0x201/0x202 (grande); IFD1 con una
+    tira JPEG chica (compresión 6); IFD2 con una tira «JPEG sin pérdida» falsa."""
+    grande, chica = jpeg_mitades(1000, 600), jpeg_mitades(200, 150, "#00ff00")
+    # SOF3 (sin pérdida) de 3000×2000: el más grande, pero Qt no lo decodifica
+    falsa = b"\xff\xd8\xff\xc3\x00\x11\x08" + struct.pack(">HH", 2000, 3000) + b"\x00" * 200
+    ifd0 = 8
+    ifd1 = ifd0 + 2 + 3 * 12 + 4
+    ifd2 = ifd1 + 2 + 4 * 12 + 4
+    datos0 = ifd2 + 2 + 4 * 12 + 4
+    d_grande, d_chica, d_falsa = datos0, datos0 + len(grande), datos0 + len(grande) + len(chica)
+    e = lambda tag, tipo, val: struct.pack("<HHII", tag, tipo, 1, val)  # noqa: E731
+    out = b"II*\x00" + struct.pack("<I", ifd0)
+    out += struct.pack("<H", 3) + e(0x0112, 3, orient) + e(0x0201, 4, d_grande) + e(0x0202, 4, len(grande)) + struct.pack("<I", ifd1)
+    out += struct.pack("<H", 4) + e(0x0103, 3, 6) + e(0x0111, 4, d_chica) + e(0x0117, 4, len(chica)) + e(0x0100, 4, 200) + struct.pack("<I", ifd2)
+    out += struct.pack("<H", 4) + e(0x0103, 3, 7) + e(0x0111, 4, d_falsa) + e(0x0117, 4, len(falsa)) + e(0x0100, 4, 9) + struct.pack("<I", 0)
+    with open(ruta, "wb") as f:
+        f.write(out + grande + chica + falsa)
+
+
+def raf_sintetico(ruta):
+    j = jpeg_mitades(640, 480)
+    cab = b"FUJIFILMCCD-RAW 0201FF383501".ljust(84, b"\x00") + struct.pack(">II", 100, len(j))
+    with open(ruta, "wb") as f:
+        f.write(cab.ljust(100, b"\x00") + j)
+
+
+def arriba_negro(img, claro="#ffffff"):
+    return parecido(color_en(img, img.width() // 2, 2), "#000000", 40) and \
+        parecido(color_en(img, img.width() // 2, img.height() - 3), claro, 40)
+
+
+cr3 = os.path.join(TMP, "sint.cr3")
+cr3_sintetico(cr3, 6)
+cands, orient = raw.candidatos(cr3)
+check("CR3: encuentra THMB, PRVW y el completo", len(cands) == 3 and orient == 6, (cands, orient))
+img = raw.vista_previa(cr3)
+check("CR3 completo: el más grande, rotado 90° (orientación 6)",
+      img is not None and (img.width(), img.height()) == (800, 1200) and arriba_negro(img),
+      img and (img.width(), img.height()))
+mini = raw.vista_previa(cr3, QSize(192, 192))
+check("CR3 miniatura: sale del PRVW, no del completo",
+      mini is not None and max(mini.width(), mini.height()) == 192 and arriba_negro(mini, "#00ff00"),
+      mini and (mini.width(), mini.height()))
+check("CR3: vista previa chica no reemplaza al RAW", raw.vista_previa(cr3, lado_real=6000) is None)
+
+tif = os.path.join(TMP, "sint.cr2")
+tiff_raw_sintetico(tif, 8)
+img = raw.vista_previa(tif)
+check("TIFF/CR2: el más grande, rotado 270° (orientación 8)",
+      img is not None and (img.width(), img.height()) == (600, 1000)
+      and parecido(color_en(img, 300, img.height() - 3), "#000000", 40), img and (img.width(), img.height()))
+mini = raw.vista_previa(tif, QSize(192, 192))
+check("TIFF/CR2 miniatura: la tira chica", mini is not None and max(mini.width(), mini.height()) == 192
+      and parecido(color_en(mini, mini.width() // 2, 10), "#00ff00", 40))
+check("TIFF: descarta el JPEG sin pérdida", len(raw.candidatos(tif)[0]) == 3)
+
+raf = os.path.join(TMP, "sint.raf")
+raf_sintetico(raf)
+img = raw.vista_previa(raf)
+check("RAF: el JPEG de la cabecera", img is not None and (img.width(), img.height()) == (640, 480))
+
+basura = os.path.join(TMP, "roto.cr3")
+with open(basura, "wb") as f:
+    f.write(b"\x00\x00\x00\x18ftypcrx " + os.urandom(3000))
+check("RAW roto: None, sin excepción", raw.vista_previa(basura) is None)
+antes = open(cr3, "rb").read()
+try:
+    from visor import acciones as _acc
+    _acc.rotar(cr3, 90)
+    rot_raw = False
+except _acc.ErrorAccion:
+    rot_raw = True
+check("rotar un RAW: aviso claro y archivo intacto", rot_raw and open(cr3, "rb").read() == antes)
+img, _err = imagenes.cargar(cr3, maximo=QSize(100, 100))
+check("cargar() usa la vista previa del RAW", not img.isNull() and max(img.width(), img.height()) == 100)
+
 # ---------------------------------------------------------------- rotar
 print("rotar")
 from visor import acciones  # noqa: E402

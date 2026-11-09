@@ -55,7 +55,17 @@ def listar_carpeta(carpeta):
 
 def cargar(ruta, maximo=None):
     """Carga respetando la orientación EXIF. `maximo` (QSize) reduce al leer —
-    para JPEG es mucho más rápido que leer entero y escalar después."""
+    para JPEG es mucho más rápido que leer entero y escalar después.
+
+    RAW: primero el JPEG que trae incrustado (visor/raw.py, centésimas en vez de
+    ~2 s); si no sirve, el RAW entero con el plugin de Qt."""
+    from visor import raw
+    if raw.es_raw(ruta):
+        real = QImageReader(ruta).size() if maximo is None else None
+        img = raw.vista_previa(ruta, maximo,
+                               lado_real=max(real.width(), real.height()) if real and real.isValid() else None)
+        if img is not None:
+            return img, ""
     lector = QImageReader(ruta)
     lector.setAutoTransform(True)
     lector.setDecideFormatFromContent(True)

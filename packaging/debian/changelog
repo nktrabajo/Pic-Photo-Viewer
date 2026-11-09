@@ -1,3 +1,14 @@
+picphotoviewer (0.2.1) unstable; urgency=low
+
+  * RAW photos (CR3, CR2, NEF, ARW, DNG, RAF…) load much faster: thumbnails
+    and the full view use the JPEG the camera embeds in the file instead of
+    developing the RAW (CR3 thumbnail ~2.2 s → ~0.01 s; full photo 2.2 s →
+    0.3 s). Falls back to LibRaw when there is no usable embedded JPEG.
+  * Rotating a RAW photo now shows a clear message instead of an error.
+  * Fotos RAW mucho más rápidas (usa el JPEG que trae la cámara).
+
+ -- Neils Karlson <nktrabajo@gmail.com>  Sun, 08 Nov 2026 23:30:00 -0600
+
 picphotoviewer (0.2.0) unstable; urgency=low
 
   * English user interface. The language follows the system (Spanish when

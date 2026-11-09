@@ -257,6 +257,8 @@ EN = {
         "The “exiftran” program is missing (sudo apt install exiftran).",
     "exiftran falló: {error}": "exiftran failed: {error}",
     "No se rotan imágenes animadas.": "Animated images can't be rotated.",
+    "Las fotos RAW no se rotan desde el visor: rótala en tu revelador (darktable, RawTherapee…).":
+        "RAW photos can't be rotated from the viewer: rotate it in your raw developer (darktable, RawTherapee…).",
     "No se pudo mandar a la papelera: {error}": "Could not move to the Trash: {error}",
     "xdg-mime falló": "xdg-mime failed",
 }
