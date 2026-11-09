@@ -33,6 +33,9 @@ anota lo propio de PicPhotoViewer.
        bueno del usuario.
 4. [x] ~~**v0.2.0**: ícono propio, interfaz en inglés, README en inglés con capturas,
        repositorio APT~~ (3.8, 3.10, 3.11) — pedido 2026-11-08 para promocionar la app.
+4b. [x] ~~**v0.2.1**: RAW rápidos (3.13)~~ — publicada 2026-11-08 con el visto bueno del
+       usuario; en su equipo quedó instalada la 0.2.1 por apt. Nota de Obsidian:
+       `Proyectos/PicPhotoViewer.md`.
 5. [ ] **Promoción** (lo hace el usuario; plan conversado 2026-11-08): subir
        `assets/vista-previa-social.png` en Settings → Social preview (cambió con el ícono
        nuevo); alta en AlternativeTo como alternativa a Picasa Photo Viewer; post con el GIF
