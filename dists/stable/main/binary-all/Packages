@@ -48,3 +48,28 @@ Description: photo viewer that opens over the desktop, Picasa style
  desktop background on one, several or all monitors (with a diagram of the
  real monitor layout), and as the GDM login screen background.
 
+Package: picphotoviewer
+Architecture: all
+Version: 0.2.2
+Priority: optional
+Section: graphics
+Maintainer: Neils Karlson <nktrabajo@gmail.com>
+Installed-Size: 340
+Depends: python3 (>= 3.11), python3-pyside6.qtcore, python3-pyside6.qtgui, python3-pyside6.qtwidgets, python3-pyside6.qtprintsupport, python3-pil, exiftran, libglib2.0-bin, pkexec, xdg-utils
+Recommends: qt6-image-formats-plugins, qt6-translations-l10n, python3-nautilus, libnotify-bin, xclip
+Filename: pool/main/p/picphotoviewer/picphotoviewer_0.2.2_all.deb
+Size: 152188
+MD5sum: d322e499e4e53e4985ac0ca2b3945208
+SHA1: 39479ba9db7c9acb694171e6854b7d55e1fa7e04
+SHA256: 095488d2c169224551dcb816b55e2d64bcd388ecb14197ec13f22d1801f2aa8e
+SHA512: d4aba948697017434e3172f91fd12b9eae83dedc0e6161ae3c0877cbf856ed36a202c9d8f1b7ab22492ac41c53b54c1ecdf8888fcc57605b3f3cdbb693dc2f04
+Homepage: https://github.com/nktrabajo/Pic-Photo-Viewer
+Description: photo viewer that opens over the desktop, Picasa style
+ PicPhotoViewer shows a photo over a translucent layer on top of the desktop,
+ with a filmstrip of the folder and a toolbar: zoom, slideshow, lossless
+ rotation, stars compatible with .picasa.ini, print, copy and trash.
+ .
+ From the viewer or from the Nautilus context menu it can set a photo as the
+ desktop background on one, several or all monitors (with a diagram of the
+ real monitor layout), and as the GDM login screen background.
+
