@@ -36,9 +36,10 @@ anota lo propio de PicPhotoViewer.
 4b. [x] ~~**v0.2.1**: RAW rápidos (3.13)~~ — publicada 2026-11-08 con el visto bueno del
        usuario; en su equipo quedó instalada la 0.2.1 por apt. Nota de Obsidian:
        `Proyectos/PicPhotoViewer.md`.
-4c. [ ] **v0.2.2**: GIF y WebP animados (3.14) — lista en dev el 2026-11-21 (código, pruebas,
-       `.deb` armado). **Falta**: commit y `./tools/publicar_release.sh`, con el visto bueno
-       del usuario para esta versión.
+4c. [x] ~~**v0.2.2**: GIF y WebP animados (3.14)~~ — publicada 2026-11-21 con el visto bueno
+       del usuario. Verificado desde afuera: la API devuelve `v0.2.2`, el `.deb` baja y su
+       SHA256 coincide, y el `Packages` de GitHub Pages ya lista la 0.2.2. **El usuario no
+       la había probado en pantalla antes de publicar**: falta que la vea con un GIF real.
 5. [ ] **Promoción** (lo hace el usuario; plan conversado 2026-11-08): alta en AlternativeTo como alternativa a Picasa Photo Viewer; post con el GIF
        en r/linux, r/debian, r/gnome; escribir a It's FOSS / OMG! Ubuntu / Linuxiac.
        Antes de anunciar en Ubuntu, probarlo en una VM (¿trae PySide6 en sus repos?).
@@ -502,7 +503,7 @@ Probado en seco con HOME, gsettings y dpkg falsos.
 4. [x] 2026-11-08 — D1 y D2 resueltos; releases v0.1.0 a v0.1.3.
 5. [x] 2026-11-08 — v0.2.0: ícono propio, inglés, README con capturas, repositorio APT.
 6. [x] 2026-11-08 — v0.2.1: RAW rápidos con el JPEG incrustado.
-7. [ ] 2026-11-21 — v0.2.2: GIF y WebP animados — lista en dev, falta publicar.
+7. [x] 2026-11-21 — v0.2.2: GIF y WebP animados, publicada.
 
 ## Bugs encontrados y corregidos
 
