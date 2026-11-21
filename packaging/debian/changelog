@@ -1,3 +1,13 @@
+picphotoviewer (0.2.2) unstable; urgency=low
+
+  * Animated images now play: GIF and animated WebP (and the other animated
+    formats Qt can read) run with the timing and loop count stored in the
+    file. Zoom, pan, copy and print keep working while they play; the
+    animation pauses when the window is minimized.
+  * Los GIF y WebP animados ahora se reproducen.
+
+ -- Neils Karlson <nktrabajo@gmail.com>  Sat, 21 Nov 2026 11:30:00 -0600
+
 picphotoviewer (0.2.1) unstable; urgency=low
 
   * RAW photos (CR3, CR2, NEF, ARW, DNG, RAF…) load much faster: thumbnails

@@ -26,10 +26,14 @@ os.makedirs(S + "/f2")
 os.makedirs(S + "/home")  # sin HOME existente no hay papelera (ni Qt ni gio pueden crearla)
 for i in range(1, 13):
     Image.new("RGB", (4000, 3000) if i % 3 == 0 else (1024, 768), (i * 20, 90, 160)).save(f"{S}/f2/{i}.jpg")
+# animaciones: 3 cuadros de colores distintos, en bucle
+_cuadros = [Image.new("RGB", (320, 240), c) for c in ((255, 0, 0), (0, 255, 0), (0, 0, 255))]
+_cuadros[0].save(f"{S}/f2/13.gif", save_all=True, append_images=_cuadros[1:], duration=60, loop=0)
+_cuadros[0].save(f"{S}/f2/14.webp", save_all=True, append_images=_cuadros[1:], duration=60, loop=0, lossless=True)
 os.environ.update(QT_QPA_PLATFORM="offscreen", HOME=S+"/home", XDG_DATA_HOME=S+"/home/.local/share")
 from PySide6.QtWidgets import QApplication
 from PySide6.QtTest import QTest
-from PySide6.QtCore import Qt, QPoint, QPointF, QTimer
+from PySide6.QtCore import Qt, QEventLoop, QPoint, QPointF, QTimer
 from PySide6.QtGui import QWheelEvent
 app=QApplication([])
 # un aviso modal colgaría la prueba: se registra en vez de mostrarse
@@ -43,12 +47,16 @@ v=Visor(S+'/f2/3.jpg'); v.resize(1600,900); v.show(); v._aparicion=1
 res=[]
 def ok(n,c): res.append((n,bool(c)))
 def esperar(ms=600):
-    QTest.qWait(ms)
+    # OJO: QTest.qWait NO sirve aquí: retiene el GIL y los hilos de carga no
+    # avanzan mientras dura (medido: 1 vuelta de un hilo en 600 ms, contra 536
+    # con un bucle de eventos). La aplicación real corre en app.exec(), que sí
+    # lo suelta.
+    bucle = QEventLoop(); QTimer.singleShot(ms, bucle.quit); bucle.exec()
 def boton(i):
     v._ubicar_botones(); c=v._por_id[i].rect.center().toPoint()
     QTest.mouseClick(v, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, c)
 import time; t0=time.time()
-while v.img is None and time.time()-t0<5: QTest.qWait(20)
+while v.img is None and time.time()-t0<5: esperar(20)
 ok("carga", v.img is not None and v.indice==2)
 # idioma: los textos visibles salen en el elegido y caben
 from core import idioma
@@ -67,6 +75,30 @@ boton("siguiente"); esperar(); ok("siguiente", os.path.basename(v.ruta)=="4.jpg"
 QTest.keyClick(v, Qt.Key.Key_Left); esperar(); ok("flecha izq", os.path.basename(v.ruta)=="3.jpg")
 QTest.keyClick(v, Qt.Key.Key_End); esperar(); ok("fin", v.indice==len(v.lista)-1)
 QTest.keyClick(v, Qt.Key.Key_Home); esperar(); ok("inicio", v.indice==0)
+# animadas (GIF, WebP): los cuadros van pasando; una foto fija no se anima
+def colores(ms=700):
+    vistos = set(); fin = time.time() + ms / 1000
+    while time.time() < fin:
+        esperar(15)
+        if v.img is not None: vistos.add(v.img.pixelColor(10, 10).name())
+    return vistos
+ok("foto fija sin animación", v.img is not None and v._pelicula is None)
+for nombre in ("13.gif", "14.webp"):
+    v.ir_a(v.lista.index(f"{S}/f2/{nombre}")); esperar()
+    ok(f"{nombre} se anima", v._pelicula is not None and len(colores()) == 3)
+    pantalla = set()
+    for _ in range(30):
+        esperar(25); pantalla.add(v.grab().toImage().pixelColor(v._rect_foto().center().toPoint()).name())
+    ok(f"{nombre} se pinta cuadro a cuadro", len(pantalla) == 3)
+v.hide(); ok("oculta: animación en pausa", len(colores(300)) == 1)
+v.show(); ok("visible otra vez: sigue", len(colores()) == 3)
+# a una foto que NO está en la caché: mientras carga, la animación anterior no debe seguir pintándose
+v.cargador.olvidar(f"{S}/f2/7.jpg"); v.ir_a(v.lista.index(f"{S}/f2/7.jpg"))
+ok("al salir de la animada se detiene enseguida", v._pelicula is None and v.img is None)
+esperar(); ok("y la foto siguiente queda fija", v._pelicula is None and len(colores(300)) == 1)
+v.ir_a(v.lista.index(f"{S}/f2/13.gif")); esperar(200)
+ok("vuelve desde la caché y se anima", len(colores()) == 3)
+v.ir_a(0); esperar()
 # foto grande para zoom: buscar una 4000x3000
 for i,r in enumerate(v.lista):
     from visor.imagenes import dimensiones

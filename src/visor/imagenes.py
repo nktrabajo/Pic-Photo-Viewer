@@ -101,5 +101,7 @@ def dimensiones(ruta):
 
 
 def es_animada(ruta):
+    """GIF, WebP… con más de un cuadro. Lee el archivo: fuera del hilo de la UI."""
     lector = QImageReader(ruta)
+    lector.setDecideFormatFromContent(True)
     return lector.supportsAnimation() and lector.imageCount() > 1

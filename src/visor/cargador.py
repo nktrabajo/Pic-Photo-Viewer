@@ -14,7 +14,7 @@ LADO_MINI = 96
 
 
 class _Puente(QObject):
-    imagen = Signal(str, QImage, str)   # ruta, imagen, error
+    imagen = Signal(str, QImage, str, bool)   # ruta, imagen, error, es animada
     mini = Signal(str, QImage)
 
 
@@ -60,6 +60,7 @@ class Cargador(QObject):
         self._puente.imagen.connect(self._recibir_imagen)
         self._puente.mini.connect(self._recibir_mini)
         self._imagenes = OrderedDict()
+        self._animadas = set()
         self._minis = {}
         self._pendientes = set()
         self._minis_pendientes = set()
@@ -79,19 +80,26 @@ class Cargador(QObject):
 
         def trabajo():
             img, err = imagenes.cargar(ruta)
-            puente.imagen.emit(ruta, img, err)
+            # se averigua aquí, en el hilo: contar los cuadros lee el archivo
+            puente.imagen.emit(ruta, img, err, not img.isNull() and imagenes.es_animada(ruta))
         self._pool.start(_Tarea(trabajo), prioridad)
+
+    def es_animada(self, ruta):
+        """Solo se sabe de las imágenes que están en la caché."""
+        return ruta in self._animadas
 
     def olvidar(self, ruta):
         self._imagenes.pop(ruta, None)
+        self._animadas.discard(ruta)
         self._minis.pop(ruta, None)
 
-    def _recibir_imagen(self, ruta, img, err):
+    def _recibir_imagen(self, ruta, img, err, animada):
         self._pendientes.discard(ruta)
         if not img.isNull():
             self._imagenes[ruta] = img
+            (self._animadas.add if animada else self._animadas.discard)(ruta)
             while len(self._imagenes) > self.MAX_IMAGENES:
-                self._imagenes.popitem(last=False)
+                self._animadas.discard(self._imagenes.popitem(last=False)[0])
         self.imagen_lista.emit(ruta, img, err)
 
     # -- miniaturas

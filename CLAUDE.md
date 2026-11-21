@@ -36,6 +36,9 @@ anota lo propio de PicPhotoViewer.
 4b. [x] ~~**v0.2.1**: RAW rápidos (3.13)~~ — publicada 2026-11-08 con el visto bueno del
        usuario; en su equipo quedó instalada la 0.2.1 por apt. Nota de Obsidian:
        `Proyectos/PicPhotoViewer.md`.
+4c. [ ] **v0.2.2**: GIF y WebP animados (3.14) — lista en dev el 2026-11-21 (código, pruebas,
+       `.deb` armado). **Falta**: commit y `./tools/publicar_release.sh`, con el visto bueno
+       del usuario para esta versión.
 5. [ ] **Promoción** (lo hace el usuario; plan conversado 2026-11-08): alta en AlternativeTo como alternativa a Picasa Photo Viewer; post con el GIF
        en r/linux, r/debian, r/gnome; escribir a It's FOSS / OMG! Ubuntu / Linuxiac.
        Antes de anunciar en Ubuntu, probarlo en una VM (¿trae PySide6 en sus repos?).
@@ -327,6 +330,33 @@ las 28 miniaturas visibles en 1,4 s.
   orientación (3 fallas), miniatura del JPEG más grande (2), no usar raw.py (1).
   Aceptar el SOF3 ya no rompe nada porque si un JPEG no decodifica se prueba el siguiente.
 
+### 3.14 Imágenes animadas con QMovie (2026-11-21, pedido del usuario — v0.2.2)
+
+El visor mostraba los GIF como imagen fija. Ahora, si la foto actual tiene más de un cuadro,
+`Visor._iniciar_animacion` crea un `QMovie` y **cada cuadro pasa a ser `self.img`**: por eso
+zoom, arrastre, copiar e imprimir siguen igual, sin un camino aparte para las animadas.
+
+- Vale para lo que `QMovie.supportedFormats()` da en Debian 13: **gif, webp**, avif(s), jxl,
+  mng, ani. **APNG no** (el lector de PNG de Qt no anima) — queda fijo.
+- **Tiempos y repeticiones los del archivo** (medido): Qt sube a 100 ms los retardos de
+  0–10 ms, como los navegadores; un GIF sin bucle se reproduce una vez y queda en el último
+  cuadro.
+- Saber si es animada lee el archivo (`imagenes.es_animada`, contar cuadros): lo hace **el
+  hilo de carga**, y viaja en la señal (`Cargador.es_animada(ruta)` solo vale para lo que
+  está en la caché). `QMovie` en cambio decodifica en el hilo de la interfaz: medido con
+  `assets/capturas/demo.gif` (960×540), 6,6 ms por cuadro contando la reducción suave.
+- La animación **se detiene al cambiar de foto** (antes de que llegue la siguiente, si no
+  el GIF viejo seguiría pintándose bajo el título nuevo) y **se pausa con la ventana
+  minimizada**. Solo se repinta el rectángulo de la foto.
+- En la presentación un GIF corre los segundos que dura cada foto. Rotar una animada sigue
+  dando el aviso de siempre. La miniatura de la tira es el primer cuadro.
+- **Probado** (`prueba_visor.py`, +10 comprobaciones por idioma): GIF y WebP de 3 cuadros de
+  colores — pasan los 3 por `self.img` **y** por lo que se pinta (`grab()`); una foto fija
+  no crea `QMovie`; oculta se pausa y al volver sigue; al ir a una foto fuera de la caché
+  se detiene enseguida; al volver desde la caché arranca. Sabotajes vistos fallar: no
+  arrancar (5 fallas), no arrancar desde la caché (6), no detener al cambiar (1 — al
+  principio no se detectaba y se agregó el caso), no pausar (1).
+
 ### 3.7 Logs (2026-11-08)
 
 `~/Logs/PicPhotoViewer-<fecha>.txt` como el estándar, pero solo se registran **acciones**
@@ -373,7 +403,7 @@ tools/dibujar_icono.py          dibuja el ícono y la vista previa social
 tools/capturas_readme.py        capturas del README sin pantalla
 tools/publicar_apt.sh           repositorio APT firmado en gh-pages (3.11)
 packaging/apt/                  .sources, clave pública e index.html del repositorio APT
-tools/pruebas/                  prueba_todo.py (120) y prueba_visor.py (24 × 2 idiomas)
+tools/pruebas/                  prueba_todo.py (120) y prueba_visor.py (34 × 2 idiomas)
 ```
 
 ## Cómo se verificó (2026-11-08)
@@ -388,8 +418,8 @@ tools/pruebas/                  prueba_todo.py (120) y prueba_visor.py (24 × 2 
   una **copia** del tema real: los 8 recursos, CSS con el bloque y el resto byte a byte
   igual, reaplicar no duplica, trigger tras «actualizar gnome-shell», rechaza no-JPEG,
   restaurar deja el archivo **idéntico al de fábrica** (`cmp`).
-- **`tools/pruebas/prueba_visor.py` — 24 comprobaciones × 2 idiomas (es y en), 0 fallas**:
-  clics en botones, teclado, arrastre, zoom (no aleja más allá de ajustada), estrella,
+- **`tools/pruebas/prueba_visor.py` — 34 comprobaciones × 2 idiomas (es y en), 0 fallas**
+  (24 hasta la v0.2.1; +10 de animadas, 3.14): clics en botones, teclado, arrastre, zoom (no aleja más allá de ajustada), estrella,
   clic en miniatura, presentación y Esc, Supr a la papelera, ayuda, clic fuera cierra; y
   por idioma: el elegido, los textos de la barra, que el texto quepa en su botón y que los
   botones no se encimen.
@@ -471,6 +501,8 @@ Probado en seco con HOME, gsettings y dpkg falsos.
 3. [x] 2026-11-08 — Prueba real en el escritorio del usuario: funciona bien.
 4. [x] 2026-11-08 — D1 y D2 resueltos; releases v0.1.0 a v0.1.3.
 5. [x] 2026-11-08 — v0.2.0: ícono propio, inglés, README con capturas, repositorio APT.
+6. [x] 2026-11-08 — v0.2.1: RAW rápidos con el JPEG incrustado.
+7. [ ] 2026-11-21 — v0.2.2: GIF y WebP animados — lista en dev, falta publicar.
 
 ## Bugs encontrados y corregidos
 
@@ -519,6 +551,18 @@ no la foto. Se revirtió el cambio en `acciones.py` y se creó el `HOME` en la p
   de los hilos de carga. Comentario «OJO» en el código.
 - **Verificado**: misma medición, la ventana pinta cada 0,5 s y la foto llega en 0,8 s.
 
+### 9.f La prueba del visor esperaba con `QTest.qWait`, que no deja correr los hilos (2026-11-21)
+
+- **Síntoma**: al agregar las animadas, «foto fija» y «zoom +» fallaban a veces: la foto
+  pedida seguía «pendiente» 600 ms después y llegaba justo con el siguiente evento de teclado.
+- **Causa raíz**: `QTest.qWait` retiene el GIL de Python mientras espera, y los hilos de
+  carga lo necesitan. Medido: un hilo dio 1 vuelta en 600 ms de `qWait` y 536 con un
+  `QEventLoop`. **No es un bug del visor** (corre en `app.exec()`, que sí suelta el GIL); la
+  prueba no lo notaba porque solo miraba fotos que ya estaban en la caché.
+- **Arreglo**: `prueba_visor.py` `esperar()` usa `QEventLoop` + `QTimer`; ya no queda ningún
+  `qWait`. Comentario «OJO» en la prueba.
+- **Verificado**: 3 corridas seguidas, 34 de 34 en los dos idiomas.
+
 ## Caminos descartados por experimento (no por opinión)
 
 - `update-alternatives` para el tema de GDM → en Debian 13 no existe esa alternativa → por
@@ -526,7 +570,8 @@ no la foto. Se revirtió el cambio en `acciones.py` y se creó el `HOME` en la p
 
 ## Qué le falta al proyecto (relevado el 2026-11-08)
 
-- GIF animados: se muestran como imagen fija (QMovie no está integrado).
+- APNG: se muestra fijo (Qt no lo anima). No hay pausa ni avance cuadro a cuadro en las
+  animadas (3.14).
 - RAW: no se aplican los ajustes de los `.xmp`; la vista completa es el JPEG de la cámara (3.13).
 - Si cambian los monitores (enchufar/desenchufar), el fondo compuesto no se rearma solo;
   se rearma al aplicar el siguiente.

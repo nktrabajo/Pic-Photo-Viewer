@@ -13,10 +13,10 @@ import os
 import shutil
 import subprocess
 
-from PySide6.QtCore import (QEasingCurve, QPointF, QRectF, QSize, Qt, QTimer,
+from PySide6.QtCore import (QByteArray, QEasingCurve, QPointF, QRectF, QSize, Qt, QTimer,
                             QVariantAnimation)
 from PySide6.QtGui import (QColor, QCursor, QFont, QFontMetrics, QGuiApplication, QImage,
-                           QKeySequence, QPainter, QPainterPath, QPen, QShortcut)
+                           QKeySequence, QMovie, QPainter, QPainterPath, QPen, QShortcut)
 from PySide6.QtWidgets import QApplication, QMenu, QMessageBox, QToolTip, QWidget
 
 from core import config
@@ -58,7 +58,8 @@ class Visor(QWidget):
         self.indice = self.lista.index(ruta_inicial)
         self.con_estrella = estrellas.estrellas_de_carpeta(os.path.dirname(ruta_inicial))
 
-        self.img = None            # QImage completa de la foto actual
+        self.img = None            # QImage completa de la foto actual (o el cuadro actual)
+        self._pelicula = None      # QMovie si la foto actual es animada (GIF, WebP…)
         self.error = ""
         self.zoom = None           # None = ajustada a la pantalla
         self.centro = QPointF(0, 0)  # desplazamiento de la foto respecto del centro del área
@@ -116,6 +117,7 @@ class Visor(QWidget):
         return self.lista[self.indice] if self.lista else None
 
     def _cargar_actual(self):
+        self._detener_animacion()
         self.img = self.cargador.imagen(self.ruta)
         self.error = ""
         self.zoom = None
@@ -123,6 +125,8 @@ class Visor(QWidget):
         self._escalada = None
         if self.img is None:
             self.cargador.pedir(self.ruta, prioridad=10)
+        else:
+            self._iniciar_animacion()
         # precargar vecinas
         for d in (1, -1):
             j = self.indice + d
@@ -139,8 +143,51 @@ class Visor(QWidget):
             log.warning("No se pudo abrir una imagen", {"archivo": ruta, "error": self.error})
         self.img = None if img.isNull() else img
         self._escalada = None
+        self._iniciar_animacion()
         self._actualizar_botones()
         self.update()
+
+    # ------------------------------------------------------------ animación
+    def _iniciar_animacion(self):
+        """GIF, WebP… animados: QMovie va entregando los cuadros y cada uno
+        pasa a ser `self.img`, así zoom, arrastre, copiar e imprimir siguen
+        igual. Respeta los tiempos y las repeticiones que dice el archivo."""
+        self._detener_animacion()
+        if self.img is None or not self.cargador.es_animada(self.ruta):
+            return
+        peli = QMovie(self.ruta, QByteArray(), self)
+        if not peli.isValid():
+            peli.deleteLater()
+            return
+        peli.frameChanged.connect(lambda _n, m=peli: self._cuadro(m))
+        self._pelicula = peli
+        peli.start()
+
+    def _detener_animacion(self):
+        if self._pelicula is not None:
+            self._pelicula.stop()
+            self._pelicula.deleteLater()
+            self._pelicula = None
+
+    def _cuadro(self, peli):
+        if peli is not self._pelicula:
+            return
+        img = peli.currentImage()
+        if img.isNull():
+            return
+        self.img = img
+        self._escalada = None
+        self.update(self._rect_foto().toAlignedRect().adjusted(-2, -2, 2, 2))
+
+    def hideEvent(self, e):
+        if self._pelicula is not None:  # minimizada: no gastar CPU en cuadros que no se ven
+            self._pelicula.setPaused(True)
+        super().hideEvent(e)
+
+    def showEvent(self, e):
+        if self._pelicula is not None:
+            self._pelicula.setPaused(False)
+        super().showEvent(e)
 
     # ------------------------------------------------------------ geometría
     def _rect_barra(self):
@@ -965,6 +1012,7 @@ class Visor(QWidget):
         super().resizeEvent(e)
 
     def closeEvent(self, e):
+        self._detener_animacion()
         self.cargador.cancelar_minis()
         super().closeEvent(e)
 

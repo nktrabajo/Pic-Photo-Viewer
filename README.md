@@ -27,6 +27,7 @@ It also sets a photo as the **desktop background on just the monitors you pick**
 - **Opens over the desktop**: full screen on the monitor under your pointer, translucent backdrop.
 - **Zoom** with the wheel (where the pointer is), `+` `−` `1:1`, double-click, drag to pan.
 - **Filmstrip** of the folder, previous / next, **slideshow** with crossfade (F5).
+- **Animated GIF and WebP** play as they should; RAW photos open instantly from the camera's embedded JPEG.
 - **Lossless rotation of the file itself** — JPEG through `exiftran`, which also fixes the EXIF orientation.
 - **Stars** stored in `.picasa.ini`, compatible with the ones Picasa already set.
 - Copy, print, move to trash, properties with EXIF data, open in your editor, show in folder.

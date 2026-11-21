@@ -28,6 +28,7 @@ Además pone una foto como **fondo de escritorio solo en las pantallas que elija
 - **Se abre sobre el escritorio**: pantalla completa en el monitor donde está el puntero, fondo translúcido.
 - **Zoom** con la rueda (donde está el puntero), `+` `−` `1:1`, doble clic, arrastrar.
 - **Tira de fotos** de la carpeta, anterior / siguiente, **presentación** con fundido (F5).
+- **GIF y WebP animados** se reproducen; las fotos RAW abren al instante con el JPEG que trae la cámara.
 - **Rota el archivo sin pérdida** — JPEG con `exiftran`, que además corrige la orientación EXIF.
 - **Estrellas** guardadas en `.picasa.ini`, compatibles con las que ya marcó Picasa.
 - Copiar, imprimir, papelera, propiedades con datos EXIF, abrir con editor, abrir carpeta.
