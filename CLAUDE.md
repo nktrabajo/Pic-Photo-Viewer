@@ -40,6 +40,9 @@ anota lo propio de PicPhotoViewer.
        del usuario. Verificado desde afuera: la API devuelve `v0.2.2`, el `.deb` baja y su
        SHA256 coincide, y el `Packages` de GitHub Pages ya lista la 0.2.2. **El usuario no
        la había probado en pantalla antes de publicar**: falta que la vea con un GIF real.
+       Al cierre (2026-11-22) su equipo ya tiene instalada la 0.2.2 (`dpkg -s`) y no reportó
+       nada. Cierre de sesión: pruebas completas (120 + 34×2, `lintian`, `desktop-file-validate`,
+       `bash -n`) sin fallas; nota de Obsidian al día.
 5. [ ] **Promoción** (lo hace el usuario; plan conversado 2026-11-08): alta en AlternativeTo como alternativa a Picasa Photo Viewer; post con el GIF
        en r/linux, r/debian, r/gnome; escribir a It's FOSS / OMG! Ubuntu / Linuxiac.
        Antes de anunciar en Ubuntu, probarlo en una VM (¿trae PySide6 en sus repos?).
